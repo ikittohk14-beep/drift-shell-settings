@@ -41,8 +41,8 @@ const __dirname = path.dirname(__filename);
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
 app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations');
 
-app.setName('driftsettings');
-app.setAppUserModelId('driftsettings');
+app.setName('drift-shell-settings');
+app.setAppUserModelId('drift-shell-settings');
 
 function parseTabFromArgs(args: string[]): string | null {
   for (const arg of args) {
@@ -966,7 +966,7 @@ function createWindow(): BrowserWindow {
     transparent: true,
     backgroundColor: '#00000000',
     hasShadow: false,
-    title: 'driftsettings',
+    title: 'drift-shell-settings',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.cjs'),
       sandbox: false,

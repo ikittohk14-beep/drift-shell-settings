@@ -1,4 +1,4 @@
-# driftsettings
+# drift-shell-settings
 
 <p align="center">
   <img src="https://img.shields.io/badge/Version-1.0.0-859aea?style=for-the-badge" alt="Version 1.0.0" />
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <b>Современный, минималистичный центр управления и настроек системы для тайлингового Wayland-композитора <a href="https://github.com/malbiruk/driftwm">driftwm</a>.</b><br/>
-  <i>A sleek, modern settings & control center application tailored specifically for the driftwm infinite canvas compositor on CachyOS / Arch Linux.</i>
+  <b>Drift Shell Settings — современный, минималистичный центр управления и настроек системы для тайлингового Wayland-композитора <a href="https://github.com/malbiruk/driftwm">driftwm</a>.</b><br/>
+  <i>A sleek, modern settings & control center suite tailored specifically for the driftwm infinite canvas compositor on CachyOS / Arch Linux.</i>
 </p>
 
 ---
@@ -97,8 +97,8 @@ paru -S nodejs pnpm electron bluez bluez-utils networkmanager wireplumber
 ### 2. Клонирование репозитория
 
 ```bash
-git clone https://github.com/ikittohk14-beep/driftsettings.git
-cd driftsettings
+git clone https://github.com/ikittohk14-beep/drift-shell-settings.git
+cd drift-shell-settings
 pnpm install
 ```
 
@@ -112,6 +112,6 @@ pnpm run build
 
 ```bash
 # Исполняемый файл в ~/.local/bin
-cat << 'EOF' > ~/.local/bin/driftsettings
+cat << 'EOF' > ~/.local/bin/drift-shell-settings
 #!/usr/bin/env bash
-exec electron /path/to/driftsettings --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations "$@"
+exec electron /path/to/drift-shell-settings --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations "$@"
