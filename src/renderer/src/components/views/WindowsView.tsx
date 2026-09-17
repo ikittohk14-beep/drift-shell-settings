@@ -8,6 +8,438 @@ interface WindowsViewProps {
   onChange: (newRules: WindowRule[]) => void;
 }
 
+interface RuleEditorProps {
+  rule: WindowRule;
+  onUpdate: (partial: Partial<WindowRule>) => void;
+  onDelete?: () => void;
+  onCollapse: () => void;
+  onSaveNew?: () => void;
+  isNew?: boolean;
+  uniqueAppIds: string[];
+  activeWindow?: ActiveWindow;
+}
+
+const RuleEditor: React.FC<RuleEditorProps> = ({
+  rule,
+  onUpdate,
+  onDelete,
+  onCollapse,
+  onSaveNew,
+  isNew,
+  uniqueAppIds,
+  activeWindow,
+}) => {
+  const { t, language } = useI18n();
+
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(
+    Boolean(rule.size || rule.position || rule.border_width)
+  );
+
+  const hasBlur = typeof rule.blur === 'boolean' ? rule.blur : true;
+  const hasOpacity = typeof rule.opacity === 'number';
+  const opacityVal = hasOpacity ? rule.opacity! : 0.85;
+
+  return (
+    <div className="p-4 space-y-3.5 border-t border-[#262529] bg-[#161518]/90">
+      {/* Matchers: App ID & Window Title */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-[#e5e2e3]">
+            {t('windowsAppId')}
+          </label>
+          <input
+            type="text"
+            value={rule.app_id || ''}
+            onChange={(e) => onUpdate({ app_id: e.target.value })}
+            placeholder={t('windowsAppIdPlaceholder')}
+            className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-xl px-3 py-1.5 text-xs text-[#e5e2e3] outline-none placeholder:text-[#474648] font-mono"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-[#e5e2e3]">
+            {t('windowsTitleMatcher')}
+          </label>
+          <input
+            type="text"
+            value={rule.title || ''}
+            onChange={(e) => onUpdate({ title: e.target.value })}
+            placeholder={t('windowsTitleMatcherPlaceholder')}
+            className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-xl px-3 py-1.5 text-xs text-[#e5e2e3] outline-none placeholder:text-[#474648] font-mono"
+          />
+        </div>
+      </div>
+
+      {/* Quick Pick Chips for App ID */}
+      {uniqueAppIds.length > 0 && (
+        <div className="space-y-1 pt-0.5">
+          <span className="text-[10px] text-[#929092]">
+            {t('windowsQuickPickApp')}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {uniqueAppIds.map((appId) => (
+              <button
+                key={appId}
+                type="button"
+                onClick={() => onUpdate({ app_id: appId })}
+                className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors cursor-pointer ${
+                  rule.app_id === appId
+                    ? 'bg-[#859aea]/20 border-[#859aea] text-[#859aea]'
+                    : 'bg-[#131315] border-[#262529] text-[#929092] hover:text-[#e5e2e3]'
+                }`}
+              >
+                {appId}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Visual Effects: Blur & Opacity */}
+      <div className="p-3 bg-[#131315] border border-[#262529] rounded-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs font-medium text-[#e5e2e3]">
+              {t('windowsBlur')}
+            </div>
+            <div className="text-[10px] text-[#929092] mt-0.5">
+              {language === 'ru'
+                ? 'Аппаратное размытие подложки Dual Kawase'
+                : 'Dual Kawase hardware background blur'}
+            </div>
+          </div>
+          <Toggle
+            checked={hasBlur}
+            onChange={(val) => onUpdate({ blur: val })}
+          />
+        </div>
+
+        {/* Opacity Slider */}
+        <div className="pt-2 border-t border-[#262529] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-[#e5e2e3]">
+              {t('windowsOpacity')}:{' '}
+              <span className="text-[#859aea] font-bold">
+                {hasOpacity
+                  ? `${Math.round(opacityVal * 100)}%`
+                  : language === 'ru'
+                  ? '100% (по умолч.)'
+                  : '100% (default)'}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (hasOpacity) {
+                  onUpdate({ opacity: undefined });
+                } else {
+                  onUpdate({ opacity: 0.85 });
+                }
+              }}
+              className={`text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                hasOpacity
+                  ? 'bg-[#859aea]/15 border-[#859aea]/40 text-[#859aea]'
+                  : 'bg-[#1a191d] border-[#262529] text-[#929092]'
+              }`}
+            >
+              {hasOpacity
+                ? language === 'ru'
+                  ? 'Задана'
+                  : 'Custom'
+                : language === 'ru'
+                ? 'По умолчанию'
+                : 'Default'}
+            </button>
+          </div>
+
+          {hasOpacity && (
+            <input
+              type="range"
+              min="0.1"
+              max="1.0"
+              step="0.05"
+              value={opacityVal}
+              onChange={(e) =>
+                onUpdate({
+                  opacity: Math.round(parseFloat(e.target.value) * 100) / 100,
+                })
+              }
+              className="w-full cursor-pointer accent-[#859aea]"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Window Decorations Mode */}
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-medium text-[#e5e2e3]">
+          {t('windowsDecoration')}
+        </label>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { id: 'none', label: t('windowsDecorNone') },
+            { id: 'minimal', label: t('windowsDecorMinimal') },
+            { id: 'client', label: t('windowsDecorClient') },
+            { id: 'server', label: t('windowsDecorServer') },
+          ].map((dec) => (
+            <button
+              key={dec.id}
+              type="button"
+              onClick={() =>
+                onUpdate({
+                  decoration: rule.decoration === dec.id ? undefined : (dec.id as any),
+                })
+              }
+              className={`px-2.5 py-1.5 text-[11px] rounded-xl border text-center transition-colors cursor-pointer ${
+                rule.decoration === dec.id
+                  ? 'bg-[#859aea]/20 border-[#859aea] text-[#859aea] font-medium'
+                  : 'bg-[#131315] border-[#262529] text-[#929092] hover:border-[#36353b] hover:text-[#e5e2e3]'
+              }`}
+            >
+              {dec.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Behaviors: Sticky & Widget */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="p-3 bg-[#131315] border border-[#262529] rounded-xl flex items-center justify-between">
+          <div className="pr-2">
+            <div className="text-xs font-medium text-[#e5e2e3]">{t('windowsSticky')}</div>
+            <div className="text-[10px] text-[#929092] mt-0.5">{t('windowsStickyDesc')}</div>
+          </div>
+          <Toggle
+            checked={!!rule.sticky}
+            onChange={(val) => onUpdate({ sticky: val ? true : undefined })}
+          />
+        </div>
+
+        <div className="p-3 bg-[#131315] border border-[#262529] rounded-xl flex items-center justify-between">
+          <div className="pr-2">
+            <div className="text-xs font-medium text-[#e5e2e3]">{t('windowsWidget')}</div>
+            <div className="text-[10px] text-[#929092] mt-0.5">{t('windowsWidgetDesc')}</div>
+          </div>
+          <Toggle
+            checked={!!rule.widget}
+            onChange={(val) => onUpdate({ widget: val ? true : undefined })}
+          />
+        </div>
+      </div>
+
+      {/* Collapsible Advanced Geometry */}
+      <div className="pt-1">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="text-[11px] text-[#859aea] hover:underline flex items-center space-x-1 cursor-pointer"
+          >
+            <span>{showAdvanced ? '▼' : '▶'}</span>
+            <span>{t('windowsGeometry')}</span>
+          </button>
+
+          {activeWindow && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowAdvanced(true);
+                onUpdate({
+                  size: activeWindow.size,
+                  position: activeWindow.position,
+                });
+              }}
+              className="text-[10px] text-[#929092] hover:text-[#859aea] transition-colors cursor-pointer"
+            >
+              :: {t('windowsCopyCurrentGeometry')} ({activeWindow.size[0]}×{activeWindow.size[1]})
+            </button>
+          )}
+        </div>
+
+        {showAdvanced && (
+          <div className="mt-2.5 p-3.5 bg-[#131315] border border-[#262529] rounded-xl space-y-3.5">
+            {/* Size */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#e5e2e3]">{t('windowsSizeEnabled')}</span>
+                <Toggle
+                  checked={Array.isArray(rule.size)}
+                  onChange={(val) =>
+                    onUpdate({
+                      size: val ? (activeWindow?.size || [950, 580]) : undefined,
+                    })
+                  }
+                />
+              </div>
+              {Array.isArray(rule.size) && (
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  <div>
+                    <label className="text-[10px] text-[#929092]">{t('windowsWidth')}</label>
+                    <input
+                      type="number"
+                      value={rule.size[0] || ''}
+                      onChange={(e) => {
+                        const w = parseInt(e.target.value, 10) || 0;
+                        onUpdate({ size: [w, rule.size![1]] });
+                      }}
+                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[#929092]">{t('windowsHeight')}</label>
+                    <input
+                      type="number"
+                      value={rule.size[1] || ''}
+                      onChange={(e) => {
+                        const h = parseInt(e.target.value, 10) || 0;
+                        onUpdate({ size: [rule.size![0], h] });
+                      }}
+                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Position */}
+            <div className="space-y-2 pt-2 border-t border-[#262529]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#e5e2e3]">{t('windowsPosEnabled')}</span>
+                <Toggle
+                  checked={Array.isArray(rule.position)}
+                  onChange={(val) =>
+                    onUpdate({
+                      position: val ? (activeWindow?.position || [0, 0]) : undefined,
+                    })
+                  }
+                />
+              </div>
+              {Array.isArray(rule.position) && (
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  <div>
+                    <label className="text-[10px] text-[#929092]">{t('windowsPosX')}</label>
+                    <input
+                      type="number"
+                      value={rule.position[0] ?? ''}
+                      onChange={(e) => {
+                        const x = parseInt(e.target.value, 10) || 0;
+                        onUpdate({ position: [x, rule.position![1]] });
+                      }}
+                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[#929092]">{t('windowsPosY')}</label>
+                    <input
+                      type="number"
+                      value={rule.position[1] ?? ''}
+                      onChange={(e) => {
+                        const y = parseInt(e.target.value, 10) || 0;
+                        onUpdate({ position: [rule.position![0], y] });
+                      }}
+                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Borders & Corners */}
+            <div className="space-y-2 pt-2 border-t border-[#262529]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#e5e2e3]">{t('windowsBorders')}</span>
+                <Toggle
+                  checked={
+                    typeof rule.border_width === 'number' ||
+                    typeof rule.corner_radius === 'number'
+                  }
+                  onChange={(val) =>
+                    onUpdate({
+                      border_width: val ? 2 : undefined,
+                      corner_radius: val ? 16 : undefined,
+                    })
+                  }
+                />
+              </div>
+              {(typeof rule.border_width === 'number' ||
+                typeof rule.corner_radius === 'number') && (
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  <div>
+                    <label className="text-[10px] text-[#929092]">
+                      {t('windowsBorderWidth')}
+                    </label>
+                    <input
+                      type="number"
+                      value={rule.border_width ?? ''}
+                      onChange={(e) => {
+                        const bw = parseInt(e.target.value, 10);
+                        onUpdate({
+                          border_width: isNaN(bw) ? undefined : bw,
+                        });
+                      }}
+                      placeholder="2"
+                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[#929092]">
+                      {t('windowsCornerRadius')}
+                    </label>
+                    <input
+                      type="number"
+                      value={rule.corner_radius ?? ''}
+                      onChange={(e) => {
+                        const cr = parseInt(e.target.value, 10);
+                        onUpdate({
+                          corner_radius: isNaN(cr) ? undefined : cr,
+                        });
+                      }}
+                      placeholder="16"
+                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Rule Footer Actions */}
+      <div className="pt-2 flex items-center justify-between border-t border-[#262529]">
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={onCollapse}
+            className="px-3.5 py-1.5 rounded-xl bg-[#859aea]/15 hover:bg-[#859aea]/25 text-[#859aea] font-medium text-xs transition-colors cursor-pointer"
+          >
+            {t('windowsCollapse')}
+          </button>
+          {isNew && onSaveNew && (
+            <button
+              type="button"
+              onClick={onSaveNew}
+              className="px-3.5 py-1.5 rounded-xl bg-[#859aea] hover:bg-[#9cb0f5] text-[#131315] font-semibold text-xs transition-colors cursor-pointer"
+            >
+              {t('windowsSaveRule')}
+            </button>
+          )}
+        </div>
+
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            className="px-3 py-1.5 rounded-xl border border-[#ffb4ab]/30 hover:border-[#ffb4ab] text-[#ffb4ab] text-xs transition-colors cursor-pointer"
+          >
+            {t('windowsDeleteRule')}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => {
   const { t, language } = useI18n();
 
@@ -15,14 +447,15 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
   const [activeSearch, setActiveSearch] = useState('');
   const [rulesSearch, setRulesSearch] = useState('');
 
-  // Accordion state: which rule index is currently expanded (null = all collapsed)
+  // Accordion state: both active windows and rules are CLOSED (null) by default
+  const [expandedActiveWinKey, setExpandedActiveWinKey] = useState<string | null>(null);
   const [expandedRuleIndex, setExpandedRuleIndex] = useState<number | null>(null);
 
-  // References to rule card elements for smooth scrolling
-  const ruleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  // Drafts for active windows that don't have configured rules yet
+  const [activeDrafts, setActiveDrafts] = useState<{ [winKey: string]: WindowRule }>({});
 
-  // Collapsible geometry states per rule
-  const [showAdvancedFor, setShowAdvancedFor] = useState<{ [key: number]: boolean }>({});
+  // References to rule card elements for smooth scrolling when explicitly requested
+  const ruleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Fetch active Wayland windows
   const fetchActive = async () => {
@@ -43,14 +476,6 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     const interval = setInterval(fetchActive, 2500);
     return () => clearInterval(interval);
   }, []);
-
-  // Expand and smooth scroll directly to a rule
-  const expandAndScrollToRule = (index: number) => {
-    setExpandedRuleIndex(index);
-    setTimeout(() => {
-      ruleRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 60);
-  };
 
   // Smart matcher to find configured rule for a given active window
   const getMatchingRule = (win: ActiveWindow) => {
@@ -127,7 +552,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     }
   };
 
-  // Add a new empty rule and expand it at the top
+  // Add a new empty rule and expand it
   const handleAddNewRule = (initial?: Partial<WindowRule>) => {
     const newRule: WindowRule = {
       app_id: initial?.app_id || '',
@@ -146,20 +571,6 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     setTimeout(() => {
       ruleRefs.current[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 60);
-  };
-
-  // Create rule directly from an active window
-  const handleCreateRuleForActiveWindow = (win: ActiveWindow) => {
-    handleAddNewRule({
-      app_id: win.app_id,
-      title: !win.app_id ? win.title : undefined,
-      size: win.size,
-      position: win.position,
-      widget: win.is_widget,
-      blur: true,
-      opacity: 0.85,
-      decoration: 'none',
-    });
   };
 
   // Filter configured rules
@@ -260,7 +671,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         </div>
       </div>
 
-      {/* ── Bento Grid: Row 2 (ACTIVE WINDOWS AT THE BEGINNING) ─────── */}
+      {/* ── Bento Grid: Row 2 (ACTIVE WINDOWS WITH SLIDING SETTINGS) ── */}
       <div className="minimal-card overflow-hidden">
         <div className="px-4 py-3 border-b border-[#262529] flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -297,68 +708,121 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         ) : (
           <div className="divide-y divide-[#262529]">
             {filteredActiveWindows.map((win, idx) => {
+              const winKey = `${win.app_id || 'noapp'}::${win.title || 'notitle'}::${idx}`;
+              const isExpanded = expandedActiveWinKey === winKey;
               const matched = getMatchingRule(win);
               const isConfigured = matched !== null;
 
+              // Draft or existing rule for this active window
+              const currentRule: WindowRule = isConfigured
+                ? matched.rule
+                : activeDrafts[winKey] || {
+                    app_id: win.app_id || '',
+                    title: !win.app_id ? win.title : undefined,
+                    size: win.size,
+                    position: win.position,
+                    widget: win.is_widget,
+                    blur: true,
+                    opacity: 0.85,
+                    decoration: 'none',
+                  };
+
+              const handleUpdateActiveWindow = (partial: Partial<WindowRule>) => {
+                if (isConfigured && matched) {
+                  updateRuleAt(matched.index, partial);
+                } else {
+                  const newDraft: WindowRule = {
+                    ...currentRule,
+                    ...partial,
+                  };
+                  if (partial.app_id !== undefined || partial.title !== undefined) {
+                    setActiveDrafts((prev) => ({ ...prev, [winKey]: newDraft }));
+                  } else {
+                    // User toggled an effect or geometry -> promote and save as configured rule!
+                    onChange([newDraft, ...rules]);
+                  }
+                }
+              };
+
+              const handleSaveActiveWindowNew = () => {
+                onChange([currentRule, ...rules]);
+                setActiveDrafts((prev) => {
+                  const copy = { ...prev };
+                  delete copy[winKey];
+                  return copy;
+                });
+              };
+
               return (
-                <div
-                  key={`${win.app_id}-${win.title}-${idx}`}
-                  className="px-4 py-3 flex items-center justify-between hover:bg-[#201f21]/40 transition-colors"
-                >
-                  <div className="min-w-0 pr-3 space-y-1">
-                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                      {win.app_id && (
-                        <span className="text-[#859aea] font-semibold text-[11px] shrink-0">
-                          [{win.app_id}]
-                        </span>
-                      )}
+                <div key={winKey} className="transition-colors">
+                  {/* Active Window Accordion Trigger Row */}
+                  <div
+                    onClick={() => setExpandedActiveWinKey(isExpanded ? null : winKey)}
+                    className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none ${
+                      isExpanded ? 'bg-[#201f21]/60' : ''
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2.5 min-w-0 pr-3">
+                      {/* Arrow indicator */}
+                      <span className="text-[#859aea] text-xs transition-transform duration-200 shrink-0">
+                        {isExpanded ? '▼' : '▶'}
+                      </span>
 
-                      {isConfigured ? (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#a3d4a0]/15 border-[#a3d4a0]/30 text-[#a3d4a0]">
-                          {t('windowsConfigured')}
-                        </span>
-                      ) : (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092]">
-                          {t('windowsNotConfigured')}
-                        </span>
-                      )}
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                          {win.app_id && (
+                            <span className="text-[#859aea] font-semibold text-[11px] shrink-0">
+                              [{win.app_id}]
+                            </span>
+                          )}
 
-                      {win.is_widget && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/15 border-[#c0c6dc]/30 text-[#c0c6dc]">
-                          {t('windowsWidgetBadge')}
-                        </span>
-                      )}
+                          {isConfigured ? (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#a3d4a0]/15 border-[#a3d4a0]/30 text-[#a3d4a0]">
+                              {t('windowsConfigured')}
+                            </span>
+                          ) : (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092]">
+                              {t('windowsNotConfigured')}
+                            </span>
+                          )}
 
-                      <span className="text-[10px] text-[#474648] font-mono">
-                        {win.size[0]}×{win.size[1]}
+                          {win.is_widget && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/15 border-[#c0c6dc]/30 text-[#c0c6dc]">
+                              {t('windowsWidgetBadge')}
+                            </span>
+                          )}
+
+                          <span className="text-[10px] text-[#474648] font-mono">
+                            {win.size[0]}×{win.size[1]}
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-[#e5e2e3] truncate">
+                          {win.title || t('windowsAppFallback')}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 shrink-0 ml-2">
+                      <span className="text-[10px] text-[#859aea] hover:underline font-medium">
+                        {isExpanded ? t('windowsCollapse') : t('windowsExpand')}
                       </span>
                     </div>
-
-                    <div className="text-xs text-[#e5e2e3] truncate">
-                      {win.title || t('windowsAppFallback')}
-                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 shrink-0 ml-2">
-                    {isConfigured ? (
-                      <button
-                        type="button"
-                        onClick={() => expandAndScrollToRule(matched!.index)}
-                        className="px-2.5 py-1 rounded-lg bg-[#131315] border border-[#262529] hover:border-[#859aea] text-[11px] text-[#859aea] transition-colors cursor-pointer flex items-center space-x-1"
-                      >
-                        <span>{t('windowsEditRule')}</span>
-                        <span className="text-[9px]">▶</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleCreateRuleForActiveWindow(win)}
-                        className="px-2.5 py-1 rounded-lg bg-[#859aea]/15 border border-[#859aea]/40 hover:bg-[#859aea]/25 text-[11px] text-[#859aea] font-medium transition-colors cursor-pointer"
-                      >
-                        {t('windowsQuickAdd')}
-                      </button>
-                    )}
-                  </div>
+                  {/* Inline Sliding Settings Editor for Active Window */}
+                  {isExpanded && (
+                    <RuleEditor
+                      rule={currentRule}
+                      onUpdate={handleUpdateActiveWindow}
+                      onDelete={isConfigured && matched ? () => handleDeleteRule(matched.index) : undefined}
+                      onCollapse={() => setExpandedActiveWinKey(null)}
+                      onSaveNew={!isConfigured ? handleSaveActiveWindowNew : undefined}
+                      isNew={!isConfigured}
+                      uniqueAppIds={uniqueAppIds}
+                      activeWindow={win}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -408,10 +872,6 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
           <div className="space-y-2">
             {filteredRules.map(({ rule, index }) => {
               const isExpanded = expandedRuleIndex === index;
-              const hasBlur = typeof rule.blur === 'boolean' ? rule.blur : true;
-              const hasOpacity = typeof rule.opacity === 'number';
-              const opacityVal = hasOpacity ? rule.opacity! : 0.85;
-              const isAdvancedOpen = showAdvancedFor[index] ?? (Boolean(rule.size || rule.position || rule.border_width));
 
               return (
                 <div
@@ -452,20 +912,8 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                           </span>
                         )}
 
-                        {/* Property summary badges (visible in collapsed state) */}
+                        {/* Property summary badges (NO BLUR BADGE SHOWN BEFORE OPENING) */}
                         <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                          {typeof rule.blur === 'boolean' && (
-                            <span
-                              className={`text-[9px] px-1.5 py-0.2 rounded border ${
-                                rule.blur
-                                  ? 'bg-[#a3d4a0]/10 border-[#a3d4a0]/30 text-[#a3d4a0]'
-                                  : 'bg-[#ffb4ab]/10 border-[#ffb4ab]/30 text-[#ffb4ab]'
-                              }`}
-                            >
-                              {rule.blur ? (language === 'ru' ? 'блюр' : 'blur') : (language === 'ru' ? 'без блюра' : 'no blur')}
-                            </span>
-                          )}
-
                           {typeof rule.opacity === 'number' && (
                             <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#e8cf8d]/10 border-[#e8cf8d]/30 text-[#e8cf8d]">
                               {Math.round(rule.opacity * 100)}%
@@ -519,369 +967,13 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
 
                   {/* ── Inline Sliding Settings (Visible only when Expanded) ─ */}
                   {isExpanded && (
-                    <div className="p-4 space-y-3.5 border-t border-[#262529] bg-[#161518]/90">
-                      {/* Matchers: App ID & Window Title */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-medium text-[#e5e2e3]">
-                            {t('windowsAppId')}
-                          </label>
-                          <input
-                            type="text"
-                            value={rule.app_id || ''}
-                            onChange={(e) => updateRuleAt(index, { app_id: e.target.value })}
-                            placeholder={t('windowsAppIdPlaceholder')}
-                            className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-xl px-3 py-1.5 text-xs text-[#e5e2e3] outline-none placeholder:text-[#474648] font-mono"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-medium text-[#e5e2e3]">
-                            {t('windowsTitleMatcher')}
-                          </label>
-                          <input
-                            type="text"
-                            value={rule.title || ''}
-                            onChange={(e) => updateRuleAt(index, { title: e.target.value })}
-                            placeholder={t('windowsTitleMatcherPlaceholder')}
-                            className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-xl px-3 py-1.5 text-xs text-[#e5e2e3] outline-none placeholder:text-[#474648] font-mono"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Quick Pick Chips for App ID */}
-                      {uniqueAppIds.length > 0 && (
-                        <div className="space-y-1 pt-0.5">
-                          <span className="text-[10px] text-[#929092]">
-                            {t('windowsQuickPickApp')}
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {uniqueAppIds.map((appId) => (
-                              <button
-                                key={appId}
-                                type="button"
-                                onClick={() => updateRuleAt(index, { app_id: appId })}
-                                className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors cursor-pointer ${
-                                  rule.app_id === appId
-                                    ? 'bg-[#859aea]/20 border-[#859aea] text-[#859aea]'
-                                    : 'bg-[#131315] border-[#262529] text-[#929092] hover:text-[#e5e2e3]'
-                                }`}
-                              >
-                                {appId}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Visual Effects: Blur & Opacity */}
-                      <div className="p-3 bg-[#131315] border border-[#262529] rounded-xl space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-xs font-medium text-[#e5e2e3]">
-                              {t('windowsBlur')}
-                            </div>
-                            <div className="text-[10px] text-[#929092] mt-0.5">
-                              {language === 'ru'
-                                ? 'Аппаратное размытие подложки Dual Kawase'
-                                : 'Dual Kawase hardware background blur'}
-                            </div>
-                          </div>
-                          <Toggle
-                            checked={hasBlur}
-                            onChange={(val) => updateRuleAt(index, { blur: val })}
-                          />
-                        </div>
-
-                        {/* Opacity Slider */}
-                        <div className="pt-2 border-t border-[#262529] space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-[#e5e2e3]">
-                              {t('windowsOpacity')}:{' '}
-                              <span className="text-[#859aea] font-bold">
-                                {hasOpacity ? `${Math.round(opacityVal * 100)}%` : (language === 'ru' ? '100% (по умолч.)' : '100% (default)')}
-                              </span>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (hasOpacity) {
-                                  updateRuleAt(index, { opacity: undefined });
-                                } else {
-                                  updateRuleAt(index, { opacity: 0.85 });
-                                }
-                              }}
-                              className={`text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer ${
-                                hasOpacity
-                                  ? 'bg-[#859aea]/15 border-[#859aea]/40 text-[#859aea]'
-                                  : 'bg-[#1a191d] border-[#262529] text-[#929092]'
-                              }`}
-                            >
-                              {hasOpacity
-                                ? (language === 'ru' ? 'Задана' : 'Custom')
-                                : (language === 'ru' ? 'По умолчанию' : 'Default')}
-                            </button>
-                          </div>
-
-                          {hasOpacity && (
-                            <input
-                              type="range"
-                              min="0.1"
-                              max="1.0"
-                              step="0.05"
-                              value={opacityVal}
-                              onChange={(e) =>
-                                updateRuleAt(index, {
-                                  opacity: Math.round(parseFloat(e.target.value) * 100) / 100,
-                                })
-                              }
-                              className="w-full cursor-pointer accent-[#859aea]"
-                            />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Window Decorations Mode */}
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-medium text-[#e5e2e3]">
-                          {t('windowsDecoration')}
-                        </label>
-                        <div className="grid grid-cols-4 gap-2">
-                          {[
-                            { id: 'none', label: t('windowsDecorNone') },
-                            { id: 'minimal', label: t('windowsDecorMinimal') },
-                            { id: 'client', label: t('windowsDecorClient') },
-                            { id: 'server', label: t('windowsDecorServer') },
-                          ].map((dec) => (
-                            <button
-                              key={dec.id}
-                              type="button"
-                              onClick={() =>
-                                updateRuleAt(index, {
-                                  decoration: rule.decoration === dec.id ? undefined : (dec.id as any),
-                                })
-                              }
-                              className={`px-2.5 py-1.5 text-[11px] rounded-xl border text-center transition-colors cursor-pointer ${
-                                rule.decoration === dec.id
-                                  ? 'bg-[#859aea]/20 border-[#859aea] text-[#859aea] font-medium'
-                                  : 'bg-[#131315] border-[#262529] text-[#929092] hover:border-[#36353b] hover:text-[#e5e2e3]'
-                              }`}
-                            >
-                              {dec.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Behaviors: Sticky & Widget */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="p-3 bg-[#131315] border border-[#262529] rounded-xl flex items-center justify-between">
-                          <div className="pr-2">
-                            <div className="text-xs font-medium text-[#e5e2e3]">{t('windowsSticky')}</div>
-                            <div className="text-[10px] text-[#929092] mt-0.5">{t('windowsStickyDesc')}</div>
-                          </div>
-                          <Toggle
-                            checked={!!rule.sticky}
-                            onChange={(val) => updateRuleAt(index, { sticky: val ? true : undefined })}
-                          />
-                        </div>
-
-                        <div className="p-3 bg-[#131315] border border-[#262529] rounded-xl flex items-center justify-between">
-                          <div className="pr-2">
-                            <div className="text-xs font-medium text-[#e5e2e3]">{t('windowsWidget')}</div>
-                            <div className="text-[10px] text-[#929092] mt-0.5">{t('windowsWidgetDesc')}</div>
-                          </div>
-                          <Toggle
-                            checked={!!rule.widget}
-                            onChange={(val) => updateRuleAt(index, { widget: val ? true : undefined })}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Collapsible Advanced Geometry */}
-                      <div className="pt-1">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowAdvancedFor((prev) => ({
-                              ...prev,
-                              [index]: !isAdvancedOpen,
-                            }))
-                          }
-                          className="text-[11px] text-[#859aea] hover:underline flex items-center space-x-1 cursor-pointer"
-                        >
-                          <span>{isAdvancedOpen ? '▼' : '▶'}</span>
-                          <span>{t('windowsGeometry')}</span>
-                        </button>
-
-                        {isAdvancedOpen && (
-                          <div className="mt-2.5 p-3.5 bg-[#131315] border border-[#262529] rounded-xl space-y-3.5">
-                            {/* Size */}
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#e5e2e3]">{t('windowsSizeEnabled')}</span>
-                                <Toggle
-                                  checked={Array.isArray(rule.size)}
-                                  onChange={(val) =>
-                                    updateRuleAt(index, {
-                                      size: val ? [950, 580] : undefined,
-                                    })
-                                  }
-                                />
-                              </div>
-                              {Array.isArray(rule.size) && (
-                                <div className="grid grid-cols-2 gap-2.5 pt-1">
-                                  <div>
-                                    <label className="text-[10px] text-[#929092]">{t('windowsWidth')}</label>
-                                    <input
-                                      type="number"
-                                      value={rule.size[0] || ''}
-                                      onChange={(e) => {
-                                        const w = parseInt(e.target.value, 10) || 0;
-                                        updateRuleAt(index, { size: [w, rule.size![1]] });
-                                      }}
-                                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] text-[#929092]">{t('windowsHeight')}</label>
-                                    <input
-                                      type="number"
-                                      value={rule.size[1] || ''}
-                                      onChange={(e) => {
-                                        const h = parseInt(e.target.value, 10) || 0;
-                                        updateRuleAt(index, { size: [rule.size![0], h] });
-                                      }}
-                                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Position */}
-                            <div className="space-y-2 pt-2 border-t border-[#262529]">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#e5e2e3]">{t('windowsPosEnabled')}</span>
-                                <Toggle
-                                  checked={Array.isArray(rule.position)}
-                                  onChange={(val) =>
-                                    updateRuleAt(index, {
-                                      position: val ? [0, 0] : undefined,
-                                    })
-                                  }
-                                />
-                              </div>
-                              {Array.isArray(rule.position) && (
-                                <div className="grid grid-cols-2 gap-2.5 pt-1">
-                                  <div>
-                                    <label className="text-[10px] text-[#929092]">{t('windowsPosX')}</label>
-                                    <input
-                                      type="number"
-                                      value={rule.position[0] ?? ''}
-                                      onChange={(e) => {
-                                        const x = parseInt(e.target.value, 10) || 0;
-                                        updateRuleAt(index, { position: [x, rule.position![1]] });
-                                      }}
-                                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] text-[#929092]">{t('windowsPosY')}</label>
-                                    <input
-                                      type="number"
-                                      value={rule.position[1] ?? ''}
-                                      onChange={(e) => {
-                                        const y = parseInt(e.target.value, 10) || 0;
-                                        updateRuleAt(index, { position: [rule.position![0], y] });
-                                      }}
-                                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Borders & Corners */}
-                            <div className="space-y-2 pt-2 border-t border-[#262529]">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#e5e2e3]">{t('windowsBorders')}</span>
-                                <Toggle
-                                  checked={
-                                    typeof rule.border_width === 'number' ||
-                                    typeof rule.corner_radius === 'number'
-                                  }
-                                  onChange={(val) =>
-                                    updateRuleAt(index, {
-                                      border_width: val ? 2 : undefined,
-                                      corner_radius: val ? 16 : undefined,
-                                    })
-                                  }
-                                />
-                              </div>
-                              {(typeof rule.border_width === 'number' ||
-                                typeof rule.corner_radius === 'number') && (
-                                <div className="grid grid-cols-2 gap-2.5 pt-1">
-                                  <div>
-                                    <label className="text-[10px] text-[#929092]">
-                                      {t('windowsBorderWidth')}
-                                    </label>
-                                    <input
-                                      type="number"
-                                      value={rule.border_width ?? ''}
-                                      onChange={(e) => {
-                                        const bw = parseInt(e.target.value, 10);
-                                        updateRuleAt(index, {
-                                          border_width: isNaN(bw) ? undefined : bw,
-                                        });
-                                      }}
-                                      placeholder="2"
-                                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] text-[#929092]">
-                                      {t('windowsCornerRadius')}
-                                    </label>
-                                    <input
-                                      type="number"
-                                      value={rule.corner_radius ?? ''}
-                                      onChange={(e) => {
-                                        const cr = parseInt(e.target.value, 10);
-                                        updateRuleAt(index, {
-                                          corner_radius: isNaN(cr) ? undefined : cr,
-                                        });
-                                      }}
-                                      placeholder="16"
-                                      className="w-full mt-1 bg-[#1a191d] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-xs text-[#e5e2e3] outline-none"
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Rule Footer Actions */}
-                      <div className="pt-2 flex items-center justify-between border-t border-[#262529]">
-                        <button
-                          type="button"
-                          onClick={() => setExpandedRuleIndex(null)}
-                          className="px-3.5 py-1.5 rounded-xl bg-[#859aea]/15 hover:bg-[#859aea]/25 text-[#859aea] font-medium text-xs transition-colors cursor-pointer"
-                        >
-                          {t('windowsCollapse')}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteRule(index)}
-                          className="px-3 py-1.5 rounded-xl border border-[#ffb4ab]/30 hover:border-[#ffb4ab] text-[#ffb4ab] text-xs transition-colors cursor-pointer"
-                        >
-                          {t('windowsDeleteRule')}
-                        </button>
-                      </div>
-                    </div>
+                    <RuleEditor
+                      rule={rule}
+                      onUpdate={(partial) => updateRuleAt(index, partial)}
+                      onDelete={() => handleDeleteRule(index)}
+                      onCollapse={() => setExpandedRuleIndex(null)}
+                      uniqueAppIds={uniqueAppIds}
+                    />
                   )}
                 </div>
               );
