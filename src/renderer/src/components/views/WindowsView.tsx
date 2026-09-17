@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Toggle from '../Toggle';
 import { useI18n } from '../../i18n';
 import type { WindowRule, ActiveWindow } from '../../../../preload/types';
@@ -10,8 +10,11 @@ interface WindowsViewProps {
 
 export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => {
   const { t, language } = useI18n();
+  const formRef = useRef<HTMLDivElement>(null);
+
   const [activeWindows, setActiveWindows] = useState<ActiveWindow[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
+  const [rulesSearch, setRulesSearch] = useState('');
 
   // Form State for Adding / Editing a Rule
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -40,12 +43,12 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
   const [borderWidth, setBorderWidth] = useState('');
   const [cornerRadius, setCornerRadius] = useState('');
 
-  // Fetch running wayland windows
+  // Fetch running Wayland windows from driftwm state
   const fetchActive = async () => {
     try {
       if (window.driftAPI?.getActiveWindows) {
         const wins = await window.driftAPI.getActiveWindows();
-        setActiveWindows(wins);
+        setActiveWindows(wins.filter((w) => (w.app_id && w.app_id.trim()) || (w.title && w.title.trim())));
       }
     } catch (err) {
       console.error('[WindowsView] Error fetching active windows:', err);
@@ -58,18 +61,75 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     return () => clearInterval(interval);
   }, []);
 
-  const uniqueActiveApps = useMemo(() => {
-    const map = new Map<string, ActiveWindow>();
+  // Smooth scroll directly to the form whenever opened
+  const scrollToForm = () => {
+    setTimeout(() => {
+      if (formRef.current) {
+        formRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 60);
+  };
+
+  // Smart matching between an active window and configured rules
+  const getMatchingRule = (win: ActiveWindow) => {
+    const winApp = (win.app_id || '').toLowerCase().trim();
+    const winTitle = (win.title || '').trim();
+
+    // 1. Both app_id and title match
+    let foundIdx = rules.findIndex((r) => {
+      const rApp = (r.app_id || '').toLowerCase().trim();
+      const rTitle = (r.title || '').trim();
+      return rApp && rTitle && rApp === winApp && (rTitle === winTitle || winTitle.includes(rTitle) || rTitle.includes(winTitle));
+    });
+    if (foundIdx >= 0) return { rule: rules[foundIdx], index: foundIdx };
+
+    // 2. Specific title match (e.g. drift-clock, Picture-in-Picture)
+    foundIdx = rules.findIndex((r) => {
+      const rTitle = (r.title || '').trim();
+      return rTitle && (rTitle === winTitle || winTitle.includes(rTitle));
+    });
+    if (foundIdx >= 0) return { rule: rules[foundIdx], index: foundIdx };
+
+    // 3. app_id match (case-insensitive)
+    foundIdx = rules.findIndex((r) => {
+      const rApp = (r.app_id || '').toLowerCase().trim();
+      return rApp && rApp === winApp;
+    });
+    if (foundIdx >= 0) return { rule: rules[foundIdx], index: foundIdx };
+
+    return null;
+  };
+
+  // Unique app IDs for quick suggestion chips
+  const uniqueAppIds = useMemo(() => {
+    const set = new Set<string>();
     for (const win of activeWindows) {
-      if (win.app_id && !map.has(win.app_id)) {
-        map.set(win.app_id, win);
+      if (win.app_id && win.app_id.trim()) {
+        set.add(win.app_id.trim());
       }
     }
-    return Array.from(map.values());
+    return Array.from(set);
   }, [activeWindows]);
 
+  // Filtered active windows
+  const filteredActiveWindows = useMemo(() => {
+    if (!activeSearch.trim()) return activeWindows;
+    const q = activeSearch.toLowerCase();
+    return activeWindows.filter((win) => {
+      const matchApp = win.app_id?.toLowerCase().includes(q);
+      const matchTitle = win.title?.toLowerCase().includes(q);
+      return matchApp || matchTitle;
+    });
+  }, [activeWindows, activeSearch]);
+
   // Open Form to create new rule
-  const openCreateRule = (initialAppId = '', initialTitle = '') => {
+  const openCreateRule = (
+    initialAppId = '',
+    initialTitle = '',
+    initialSize?: [number, number],
+    initialPos?: [number, number],
+    isWidget = false
+  ) => {
     setEditingIndex(null);
     setFormAppId(initialAppId);
     setFormTitle(initialTitle);
@@ -79,18 +139,34 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     setFormOpacity(0.85);
     setFormDecoration('none');
     setFormSticky(false);
-    setFormWidget(false);
-    setHasCustomSize(false);
-    setSizeW('');
-    setSizeH('');
-    setHasCustomPos(false);
-    setPosX('');
-    setPosY('');
+    setFormWidget(isWidget);
+
+    if (initialSize && Array.isArray(initialSize) && initialSize.length === 2) {
+      setHasCustomSize(true);
+      setSizeW(String(initialSize[0]));
+      setSizeH(String(initialSize[1]));
+    } else {
+      setHasCustomSize(false);
+      setSizeW('');
+      setSizeH('');
+    }
+
+    if (initialPos && Array.isArray(initialPos) && initialPos.length === 2) {
+      setHasCustomPos(true);
+      setPosX(String(initialPos[0]));
+      setPosY(String(initialPos[1]));
+    } else {
+      setHasCustomPos(false);
+      setPosX('');
+      setPosY('');
+    }
+
     setHasCustomBorders(false);
     setBorderWidth('');
     setCornerRadius('');
-    setShowAdvanced(false);
+    setShowAdvanced(Boolean(initialSize || initialPos));
     setIsFormOpen(true);
+    scrollToForm();
   };
 
   // Open Form to edit an existing rule
@@ -125,6 +201,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
 
     setShowAdvanced(hasSize || hasPos || hasBorder);
     setIsFormOpen(true);
+    scrollToForm();
   };
 
   const handleCancelForm = () => {
@@ -132,7 +209,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     setEditingIndex(null);
   };
 
-  // Save the rule being created or edited
+  // Save rule
   const handleSaveRule = () => {
     const trimmedAppId = formAppId.trim();
     const trimmedTitle = formTitle.trim();
@@ -200,6 +277,25 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     }
   };
 
+  // Quick inline blur toggle on active window row
+  const handleToggleActiveWindowBlur = (win: ActiveWindow, enable: boolean) => {
+    const matched = getMatchingRule(win);
+    if (matched) {
+      const updated = [...rules];
+      updated[matched.index] = { ...updated[matched.index], blur: enable };
+      onChange(updated);
+    } else {
+      const newRule: WindowRule = {
+        app_id: win.app_id || undefined,
+        title: !win.app_id ? win.title : undefined,
+        blur: enable,
+        opacity: 0.85,
+        decoration: 'none',
+      };
+      onChange([...rules, newRule]);
+    }
+  };
+
   // Quick inline blur toggle on an existing rule
   const handleQuickBlurToggle = (ruleIndex: number, enabled: boolean) => {
     const updated = [...rules];
@@ -214,10 +310,10 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     onChange(updated);
   };
 
-  // Filter rules by search query
+  // Filter configured rules
   const filteredRules = useMemo(() => {
-    if (!searchQuery.trim()) return rules.map((rule, index) => ({ rule, index }));
-    const q = searchQuery.toLowerCase();
+    if (!rulesSearch.trim()) return rules.map((rule, index) => ({ rule, index }));
+    const q = rulesSearch.toLowerCase();
     return rules
       .map((rule, index) => ({ rule, index }))
       .filter(({ rule }) => {
@@ -225,10 +321,10 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         const titleMatch = rule.title?.toLowerCase().includes(q);
         return appIdMatch || titleMatch;
       });
-  }, [rules, searchQuery]);
+  }, [rules, rulesSearch]);
 
   return (
-    <div className="space-y-3.5 max-w-2xl text-[#e5e2e3] font-mono text-xs pb-10">
+    <div className="space-y-3.5 max-w-2xl text-[#e5e2e3] font-mono text-xs pb-12">
       {/* ── Page Header ────────────────────────────────────────────── */}
       <div className="flex items-center justify-between pb-1">
         <div>
@@ -258,7 +354,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         </div>
       </div>
 
-      {/* ── Bento Grid: Row 1 (2 Square Metric Tiles) ───────────────── */}
+      {/* ── Bento Grid: Row 1 (2 Metric Tiles) ──────────────────────── */}
       <div className="grid grid-cols-2 gap-3.5">
         {/* Tile 1: Compositor Mode */}
         <div className="minimal-card p-4 flex flex-col justify-between h-36">
@@ -287,10 +383,10 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
           <div className="flex items-start justify-between">
             <div className="flex items-baseline">
               <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
-                {rules.length}
+                {activeWindows.length}
               </span>
               <span className="text-xs text-[#929092] ml-1.5 font-medium">
-                {t('windowsAllRulesCount')}
+                {language === 'ru' ? 'окон' : 'windows'}
               </span>
             </div>
             <span className="text-[10px] text-[#474648] font-mono">
@@ -300,21 +396,150 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
 
           <div>
             <div className="text-[11px] text-[#929092] font-medium">
-              {language === 'ru' ? 'Открыто приложений' : 'Running Applications'}
+              {language === 'ru' ? 'Настроено правил' : 'Configured Rules'}
             </div>
             <div className="text-sm font-semibold text-[#859aea]">
-              {uniqueActiveApps.length} {language === 'ru' ? 'активных окон' : 'active clients'}
+              {rules.length} {t('windowsAllRulesCount')}
             </div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
-              {language === 'ru' ? 'Аппаратный шейдер Dual Kawase' : 'Dual Kawase Shader Pipeline'}
+              {language === 'ru' ? 'Шейдер Dual Kawase' : 'Dual Kawase Shader Pipeline'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Bento Grid: Rule Creator / Editor Card ───────────────────── */}
+      {/* ── Bento Grid: Row 2 (ACTIVE WINDOWS AT THE VERY BEGINNING) ─ */}
+      <div className="minimal-card overflow-hidden">
+        <div className="px-4 py-3 border-b border-[#262529] flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-7 h-7 rounded-full border border-[#859aea]/50 bg-[#859aea]/10 flex items-center justify-center text-xs font-semibold text-[#859aea]">
+              ●
+            </div>
+            <span className="text-xs font-semibold text-[#e5e2e3]">
+              {t('windowsActiveApps')}
+            </span>
+            <span className="text-[10px] text-[#929092]">
+              ({filteredActiveWindows.length} / {activeWindows.length})
+            </span>
+          </div>
+
+          <div className="w-48">
+            <input
+              type="text"
+              value={activeSearch}
+              onChange={(e) => setActiveSearch(e.target.value)}
+              placeholder={t('windowsActiveFilterPlaceholder')}
+              className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-[11px] text-[#e5e2e3] outline-none placeholder:text-[#474648]"
+            />
+          </div>
+        </div>
+
+        {activeWindows.length === 0 ? (
+          <div className="px-4 py-8 text-center text-[#929092]">
+            {t('windowsNoActiveApps')}
+          </div>
+        ) : filteredActiveWindows.length === 0 ? (
+          <div className="px-4 py-8 text-center text-[#929092]">
+            {t('windowsNoMatchingRules')}
+          </div>
+        ) : (
+          <div className="divide-y divide-[#262529]">
+            {filteredActiveWindows.map((win, idx) => {
+              const matched = getMatchingRule(win);
+              const isConfigured = matched !== null;
+              const ruleBlur = matched?.rule.blur !== false;
+
+              return (
+                <div
+                  key={`${win.app_id}-${win.title}-${idx}`}
+                  className="px-4 py-3 flex items-center justify-between hover:bg-[#201f21]/40 transition-colors"
+                >
+                  <div className="min-w-0 pr-3 space-y-1">
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      {win.app_id && (
+                        <span className="text-[#859aea] font-semibold text-[11px] shrink-0">
+                          [{win.app_id}]
+                        </span>
+                      )}
+
+                      {isConfigured ? (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#a3d4a0]/15 border-[#a3d4a0]/30 text-[#a3d4a0]">
+                          {t('windowsConfigured')}
+                        </span>
+                      ) : (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092]">
+                          {t('windowsNotConfigured')}
+                        </span>
+                      )}
+
+                      {win.is_focused && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/15 border-[#859aea]/30 text-[#859aea]">
+                          {t('windowsFocused')}
+                        </span>
+                      )}
+
+                      {win.is_widget && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/15 border-[#c0c6dc]/30 text-[#c0c6dc]">
+                          {t('windowsWidgetBadge')}
+                        </span>
+                      )}
+
+                      <span className="text-[10px] text-[#474648] font-mono">
+                        {win.size[0]}×{win.size[1]}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-[#e5e2e3] truncate">
+                      {win.title || t('windowsAppFallback')}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 shrink-0 ml-2">
+                    {/* Quick Blur Toggle for active window */}
+                    <Toggle
+                      checked={isConfigured ? ruleBlur : false}
+                      onChange={(val) => handleToggleActiveWindowBlur(win, val)}
+                    />
+
+                    {isConfigured ? (
+                      <button
+                        type="button"
+                        onClick={() => openEditRule(matched!.index)}
+                        className="px-2.5 py-1 rounded-lg bg-[#131315] border border-[#262529] hover:border-[#859aea] text-[11px] text-[#859aea] transition-colors cursor-pointer"
+                      >
+                        {t('windowsEditRule')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openCreateRule(
+                            win.app_id,
+                            win.title,
+                            win.size,
+                            win.position,
+                            win.is_widget
+                          )
+                        }
+                        className="px-2.5 py-1 rounded-lg bg-[#859aea]/15 border border-[#859aea]/40 hover:bg-[#859aea]/25 text-[11px] text-[#859aea] font-medium transition-colors cursor-pointer"
+                      >
+                        {t('windowsQuickAdd')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Bento Grid: Row 3 (RULE CREATOR / EDITOR CARD) ──────────── */}
       {isFormOpen && (
-        <div className="minimal-card p-5 border-[#859aea]/40 bg-[#1a191d] space-y-4">
+        <div
+          ref={formRef}
+          className="minimal-card p-5 border-[#859aea]/50 bg-[#1a191d] space-y-4 shadow-none"
+        >
           <div className="flex items-center justify-between pb-2 border-b border-[#262529]">
             <div className="flex items-center space-x-2">
               <div className="w-7 h-7 rounded-full bg-[#859aea]/20 border border-[#859aea]/50 flex items-center justify-center text-xs font-bold text-[#859aea]">
@@ -364,30 +589,25 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
               </div>
             </div>
 
-            {/* Quick Pick from Active Windows */}
-            {uniqueActiveApps.length > 0 && (
+            {/* Quick Pick Chips from Active Windows */}
+            {uniqueAppIds.length > 0 && (
               <div className="space-y-1.5 pt-1">
                 <span className="text-[10px] text-[#929092]">
                   {t('windowsQuickPickApp')}
                 </span>
                 <div className="flex flex-wrap gap-1.5">
-                  {uniqueActiveApps.map((win) => (
+                  {uniqueAppIds.map((appId) => (
                     <button
-                      key={win.app_id}
+                      key={appId}
                       type="button"
-                      onClick={() => {
-                        setFormAppId(win.app_id);
-                        if (!formTitle && win.title) {
-                          setFormTitle(win.title);
-                        }
-                      }}
+                      onClick={() => setFormAppId(appId)}
                       className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors cursor-pointer ${
-                        formAppId === win.app_id
+                        formAppId === appId
                           ? 'bg-[#859aea]/20 border-[#859aea] text-[#859aea]'
                           : 'bg-[#131315] border-[#262529] text-[#929092] hover:text-[#e5e2e3] hover:border-[#36353b]'
                       }`}
                     >
-                      {win.app_id}
+                      {appId}
                     </button>
                   ))}
                 </div>
@@ -420,7 +640,10 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
               <div className="pt-2 border-t border-[#262529] space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] text-[#e5e2e3]">
-                    {t('windowsOpacity')}: <span className="text-[#859aea] font-bold">{Math.round(formOpacity * 100)}%</span>
+                    {t('windowsOpacity')}:{' '}
+                    <span className="text-[#859aea] font-bold">
+                      {Math.round(formOpacity * 100)}%
+                    </span>
                   </span>
                   <div className="flex items-center space-x-2">
                     <button
@@ -433,8 +656,12 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                       }`}
                     >
                       {formOpacityExplicit
-                        ? (language === 'ru' ? 'Активно' : 'Active')
-                        : (language === 'ru' ? 'Не задано' : 'Default')}
+                        ? language === 'ru'
+                          ? 'Активно'
+                          : 'Active'
+                        : language === 'ru'
+                          ? 'Не задано'
+                          : 'Default'}
                     </button>
                   </div>
                 </div>
@@ -452,7 +679,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
               </div>
             </div>
 
-            {/* Window Decorations (CSD / SSD) */}
+            {/* Window Decorations */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-[#e5e2e3]">
                 {t('windowsDecoration')}
@@ -651,7 +878,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         </div>
       )}
 
-      {/* ── Bento Grid: Row 2 (Configured Rules List) ───────────────── */}
+      {/* ── Bento Grid: Row 4 (CONFIGURED RULES LIST) ───────────────── */}
       <div className="minimal-card overflow-hidden">
         <div className="px-4 py-3 border-b border-[#262529] flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -669,8 +896,8 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
           <div className="w-48">
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={rulesSearch}
+              onChange={(e) => setRulesSearch(e.target.value)}
               placeholder={t('windowsSearchPlaceholder')}
               className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-[11px] text-[#e5e2e3] outline-none placeholder:text-[#474648]"
             />
@@ -697,7 +924,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                   className="px-4 py-3 space-y-2 hover:bg-[#201f21]/40 transition-colors"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className="flex items-center space-x-2.5 min-w-0 flex-wrap gap-y-1">
                       {rule.app_id && (
                         <span className="text-[#859aea] font-semibold text-[11px] shrink-0">
                           [{rule.app_id}]
@@ -739,13 +966,20 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                             : 'bg-[#ffb4ab]/10 border-[#ffb4ab]/30 text-[#ffb4ab]'
                         }`}
                       >
-                        {rule.blur ? (language === 'ru' ? 'блюр: вкл' : 'blur: on') : (language === 'ru' ? 'блюр: выкл' : 'blur: off')}
+                        {rule.blur
+                          ? language === 'ru'
+                            ? 'блюр: вкл'
+                            : 'blur: on'
+                          : language === 'ru'
+                            ? 'блюр: выкл'
+                            : 'blur: off'}
                       </span>
                     )}
 
                     {typeof rule.opacity === 'number' && (
                       <span className="text-[10px] px-1.5 py-0.2 rounded border bg-[#e8cf8d]/10 border-[#e8cf8d]/30 text-[#e8cf8d]">
-                        {language === 'ru' ? 'прозрачность' : 'opacity'}: {Math.round(rule.opacity * 100)}%
+                        {language === 'ru' ? 'прозрачность' : 'opacity'}:{' '}
+                        {Math.round(rule.opacity * 100)}%
                       </span>
                     )}
 
@@ -809,84 +1043,6 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                           className="w-full cursor-pointer accent-[#859aea]"
                         />
                       </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── Bento Grid: Row 3 (Running Applications) ────────────────── */}
-      <div className="minimal-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-[#262529] flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
-              3
-            </div>
-            <span className="text-xs font-semibold text-[#e5e2e3]">
-              {t('windowsActiveApps')}
-            </span>
-            <span className="text-[10px] text-[#929092]">
-              ({uniqueActiveApps.length})
-            </span>
-          </div>
-          <span className="text-[10px] text-[#474648] font-mono">
-            {language === 'ru' ? 'активные xdg_toplevel' : 'active xdg_toplevel'}
-          </span>
-        </div>
-
-        {uniqueActiveApps.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[#929092]">
-            {t('windowsNoActiveApps')}
-          </div>
-        ) : (
-          <div className="divide-y divide-[#262529]">
-            {uniqueActiveApps.map((win) => {
-              const matchingRuleIndex = rules.findIndex(
-                (r) => r.app_id === win.app_id || (r.title && win.title && r.title === win.title)
-              );
-              const isConfigured = matchingRuleIndex >= 0;
-
-              return (
-                <div
-                  key={`${win.app_id}-${win.title}`}
-                  className="px-4 py-3 flex items-center justify-between hover:bg-[#201f21]/40 transition-colors"
-                >
-                  <div className="min-w-0 pr-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-[#859aea] font-semibold text-[11px] shrink-0">
-                        [{win.app_id}]
-                      </span>
-                      {isConfigured && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#a3d4a0]/15 border-[#a3d4a0]/30 text-[#a3d4a0]">
-                          {t('windowsConfigured')}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-[#e5e2e3] truncate mt-0.5">
-                      {win.title || t('windowsAppFallback')}
-                    </div>
-                  </div>
-
-                  <div className="shrink-0">
-                    {isConfigured ? (
-                      <button
-                        type="button"
-                        onClick={() => openEditRule(matchingRuleIndex)}
-                        className="px-2.5 py-1 rounded-lg bg-[#131315] border border-[#262529] hover:border-[#859aea] text-[11px] text-[#859aea] transition-colors cursor-pointer"
-                      >
-                        {t('windowsEditRule')}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => openCreateRule(win.app_id, win.title)}
-                        className="px-2.5 py-1 rounded-lg bg-[#131315] border border-[#262529] hover:border-[#36353b] text-[11px] text-[#e5e2e3] hover:text-[#859aea] transition-colors cursor-pointer"
-                      >
-                        {t('windowsQuickAdd')}
-                      </button>
                     )}
                   </div>
                 </div>

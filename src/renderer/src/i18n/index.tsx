@@ -155,6 +155,11 @@ export const translations = {
     windowsDeleteRule: 'Удалить',
     windowsQuickAdd: '+ Создать правило',
     windowsConfigured: 'Настроено',
+    windowsNotConfigured: 'Без правила',
+    windowsFocused: 'в фокусе',
+    windowsWidgetBadge: 'виджет',
+    windowsCopyCurrentGeometry: 'Взять геометрию окна',
+    windowsActiveFilterPlaceholder: 'Поиск среди открытых окон...',
     windowsAllRulesCount: 'правил',
 
     // Input View
@@ -351,6 +356,11 @@ export const translations = {
     windowsDeleteRule: 'Delete',
     windowsQuickAdd: '+ Create Rule',
     windowsConfigured: 'Configured',
+    windowsNotConfigured: 'No rule',
+    windowsFocused: 'focused',
+    windowsWidgetBadge: 'widget',
+    windowsCopyCurrentGeometry: 'Copy window geometry',
+    windowsActiveFilterPlaceholder: 'Search open windows...',
     windowsAllRulesCount: 'rules',
 
     // Input View
