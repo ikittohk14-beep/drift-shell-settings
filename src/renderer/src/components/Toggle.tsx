@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../i18n';
 
 interface ToggleProps {
   checked: boolean;
@@ -11,6 +12,8 @@ export const Toggle: React.FC<ToggleProps> = ({
   onChange,
   disabled = false,
 }) => {
+  const { t } = useI18n();
+
   return (
     <button
       type="button"
@@ -27,7 +30,7 @@ export const Toggle: React.FC<ToggleProps> = ({
       <span className={`text-[9px] ${checked ? 'text-[#a3d4a0]' : 'text-[#474648]'}`}>
         {checked ? '●' : '○'}
       </span>
-      <span>{checked ? 'on' : 'off'}</span>
+      <span>{checked ? t('enabled') : t('disabled')}</span>
     </button>
   );
 };

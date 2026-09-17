@@ -90,6 +90,39 @@ function normalizePathForConfig(filePath: string): string {
   return filePath;
 }
 
+function cleanWindowRule(r: any): any {
+  if (!r || typeof r !== 'object') return null;
+  const cleaned: any = {};
+  if (typeof r.app_id === 'string' && r.app_id.trim()) cleaned.app_id = r.app_id.trim();
+  if (typeof r.title === 'string' && r.title.trim()) cleaned.title = r.title.trim();
+  if (Array.isArray(r.position) && r.position.length === 2 && !isNaN(Number(r.position[0])) && !isNaN(Number(r.position[1]))) {
+    cleaned.position = [Math.round(Number(r.position[0])), Math.round(Number(r.position[1]))];
+  }
+  if (Array.isArray(r.size) && r.size.length === 2 && !isNaN(Number(r.size[0])) && !isNaN(Number(r.size[1]))) {
+    cleaned.size = [Math.round(Number(r.size[0])), Math.round(Number(r.size[1]))];
+  }
+  if (typeof r.widget === 'boolean' && r.widget) cleaned.widget = true;
+  if (typeof r.sticky === 'boolean' && r.sticky) cleaned.sticky = true;
+  if (typeof r.decoration === 'string' && ['client', 'minimal', 'none', 'server'].includes(r.decoration)) {
+    cleaned.decoration = r.decoration;
+  }
+  if (typeof r.blur === 'boolean') cleaned.blur = r.blur;
+  if (typeof r.opacity === 'number' && !isNaN(r.opacity)) {
+    cleaned.opacity = Math.max(0.05, Math.min(1.0, Math.round(r.opacity * 100) / 100));
+  }
+  if (typeof r.border_width === 'number' && !isNaN(r.border_width)) cleaned.border_width = Math.round(r.border_width);
+  if (typeof r.border_color === 'string' && r.border_color.trim()) cleaned.border_color = r.border_color.trim();
+  if (typeof r.border_color_focused === 'string' && r.border_color_focused.trim()) cleaned.border_color_focused = r.border_color_focused.trim();
+  if (typeof r.corner_radius === 'number' && !isNaN(r.corner_radius)) cleaned.corner_radius = Math.round(r.corner_radius);
+  if (typeof r.shadow === 'boolean') cleaned.shadow = r.shadow;
+  if (r.pass_keys !== undefined) cleaned.pass_keys = r.pass_keys;
+
+  if (Object.keys(cleaned).length > 0 && (cleaned.app_id || cleaned.title)) {
+    return cleaned;
+  }
+  return null;
+}
+
 function loadTomlConfig(): DriftConfig {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
@@ -183,7 +216,11 @@ async function saveTomlConfig(newConfig: DriftConfig): Promise<{ success: boolea
     if (newConfig.zoom !== undefined) rawObj.zoom = newConfig.zoom;
     if (newConfig.snap !== undefined) rawObj.snap = newConfig.snap;
     if (newConfig.keybindings !== undefined) rawObj.keybindings = newConfig.keybindings;
-    if (newConfig.window_rules !== undefined) rawObj.window_rules = newConfig.window_rules;
+    if (newConfig.window_rules !== undefined) {
+      rawObj.window_rules = newConfig.window_rules
+        .map(cleanWindowRule)
+        .filter((r: any): r is Record<string, any> => r !== null);
+    }
 
     // 4. Stringify to TOML
     const tomlStr = stringifyToml(rawObj);

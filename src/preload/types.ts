@@ -10,6 +10,11 @@ export interface WindowRule {
   opacity?: number;
   sticky?: boolean;
   fullscreen?: boolean;
+  border_width?: number;
+  border_color?: string;
+  border_color_focused?: string;
+  corner_radius?: number;
+  shadow?: boolean;
 }
 
 export interface EffectsConfig {
