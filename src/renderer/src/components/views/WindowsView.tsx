@@ -15,6 +15,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
   const [activeWindows, setActiveWindows] = useState<ActiveWindow[]>([]);
   const [activeSearch, setActiveSearch] = useState('');
   const [rulesSearch, setRulesSearch] = useState('');
+  const [isRulesExpanded, setIsRulesExpanded] = useState(false);
 
   // Form State for Adding / Editing a Rule
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -173,6 +174,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
   const openEditRule = (index: number) => {
     const r = rules[index];
     if (!r) return;
+    setIsRulesExpanded(true);
     setEditingIndex(index);
     setFormAppId(r.app_id || '');
     setFormTitle(r.title || '');
@@ -878,42 +880,62 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         </div>
       )}
 
-      {/* ── Bento Grid: Row 4 (CONFIGURED RULES LIST) ───────────────── */}
+      {/* ── Bento Grid: Row 4 (CONFIGURED RULES ACCORDION CARD) ─────── */}
       <div className="minimal-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-[#262529] flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+        <div
+          onClick={() => setIsRulesExpanded(!isRulesExpanded)}
+          className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none"
+        >
+          <div className="flex items-center space-x-2.5">
             <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
               2
             </div>
-            <span className="text-xs font-semibold text-[#e5e2e3]">
-              {t('windowsConfiguredRules')}
-            </span>
-            <span className="text-[10px] text-[#929092]">
-              ({filteredRules.length} / {rules.length})
-            </span>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-semibold text-[#e5e2e3]">
+                {t('windowsRulesHeader')}
+              </span>
+              <span className="text-[10px] text-[#929092]">
+                ({rules.length} {t('windowsAllRulesCount')})
+              </span>
+            </div>
           </div>
 
-          <div className="w-48">
-            <input
-              type="text"
-              value={rulesSearch}
-              onChange={(e) => setRulesSearch(e.target.value)}
-              placeholder={t('windowsSearchPlaceholder')}
-              className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-[11px] text-[#e5e2e3] outline-none placeholder:text-[#474648]"
-            />
+          <div className="flex items-center space-x-3">
+            <span className="text-[11px] text-[#859aea] font-medium">
+              {isRulesExpanded ? `[ ▼ ${t('windowsRulesHide')} ]` : `[ ▶ ${t('windowsRulesShow')} ]`}
+            </span>
           </div>
         </div>
 
-        {rules.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[#929092]">
-            {t('windowsNoRules')}
-          </div>
-        ) : filteredRules.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[#929092]">
-            {t('windowsNoMatchingRules')}
-          </div>
-        ) : (
-          <div className="divide-y divide-[#262529]">
+        {isRulesExpanded && (
+          <div className="border-t border-[#262529]">
+            {/* Search Filter Header */}
+            <div className="px-4 py-2 bg-[#131315]/50 border-b border-[#262529] flex items-center justify-between">
+              <span className="text-[10px] text-[#929092]">
+                {filteredRules.length} / {rules.length}
+              </span>
+              <div className="w-56">
+                <input
+                  type="text"
+                  value={rulesSearch}
+                  onChange={(e) => setRulesSearch(e.target.value)}
+                  placeholder={t('windowsSearchPlaceholder')}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-[11px] text-[#e5e2e3] outline-none placeholder:text-[#474648]"
+                />
+              </div>
+            </div>
+
+            {rules.length === 0 ? (
+              <div className="px-4 py-8 text-center text-[#929092]">
+                {t('windowsNoRules')}
+              </div>
+            ) : filteredRules.length === 0 ? (
+              <div className="px-4 py-8 text-center text-[#929092]">
+                {t('windowsNoMatchingRules')}
+              </div>
+            ) : (
+              <div className="divide-y divide-[#262529]">
             {filteredRules.map(({ rule, index }) => {
               const hasBlur = rule.blur !== false;
               const opacity = rule.opacity ?? 1.0;
@@ -1049,9 +1071,11 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
               );
             })}
           </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
+  </div>
   );
 };
 

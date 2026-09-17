@@ -88,7 +88,9 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
     }
   };
 
-  const currentBlur = effects.blur_radius ?? 4;
+  const currentBlurRadius = effects.blur_radius ?? 2;
+  const currentBlurStrength = typeof effects.blur_strength === 'number' ? effects.blur_strength : 1.1;
+  const currentAnimateBlur = effects.animate_blur ?? false;
   const currentCorners = decorations.corner_radius ?? 16;
   const currentBorderWidth = decorations.border_width ?? 0;
   const currentBorderFocused = decorations.border_color_focused || '#859aea';
@@ -481,42 +483,113 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
             <div>
               <div className="text-xs font-semibold text-[#e5e2e3]">{t('persVisualEffects')}</div>
               <div className="text-[10px] text-[#929092]">
-                {language === 'ru' ? 'Аппаратный шейдер Dual Kawase' : 'Dual Kawase Backdrop Shader'}
+                {language === 'ru' ? 'Аппаратный шейдер Dual Kawase в driftwm' : 'Dual Kawase Backdrop Shader in driftwm'}
               </div>
             </div>
           </div>
 
           <div className="text-[11px] font-mono text-[#859aea]">
-            {currentBlur} px
+            R: {currentBlurRadius} · S: {currentBlurStrength.toFixed(1)}
           </div>
         </div>
 
         <div className="space-y-3.5 pt-1">
+          {/* Parameter 1: blur_radius (passes) */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="text-[#929092]">{t('persBlurRadius')}</span>
-              <span className="text-[#e5e2e3] font-bold">{currentBlur} px</span>
+              <span className="text-[#e5e2e3] font-bold">
+                {currentBlurRadius} {language === 'ru' ? 'проходов' : 'passes'}
+              </span>
             </div>
             <input
               type="range"
               min="0"
-              max="32"
+              max="8"
               step="1"
-              value={currentBlur}
+              value={currentBlurRadius}
               onChange={(e) =>
                 onEffectsChange({
                   ...effects,
                   blur_radius: parseInt(e.target.value, 10),
                 })
               }
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer accent-[#859aea]"
             />
+            <div className="flex items-center justify-between text-[10px] text-[#474648]">
+              <span>{language === 'ru' ? '0 (выкл)' : '0 (off)'}</span>
+              <div className="flex items-center space-x-1.5">
+                {[0, 1, 2, 4, 6].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => onEffectsChange({ ...effects, blur_radius: p })}
+                    className={`px-1.5 py-0.2 rounded border transition-colors cursor-pointer ${
+                      currentBlurRadius === p
+                        ? 'border-[#859aea] text-[#859aea] bg-[#859aea]/10'
+                        : 'border-[#262529] text-[#929092] hover:text-[#e5e2e3]'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+              <span>{language === 'ru' ? '8 (макс)' : '8 (max)'}</span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between pt-1 border-t border-[#262529]">
-            <span className="text-xs text-[#e5e2e3]">{t('persAnimateBlur')}</span>
+          {/* Parameter 2: blur_strength (spread) */}
+          <div className="space-y-1.5 pt-2 border-t border-[#262529]">
+            <div className="flex justify-between text-xs">
+              <span className="text-[#929092]">{t('persBlurStrength')}</span>
+              <span className="text-[#e5e2e3] font-bold">
+                {currentBlurStrength.toFixed(1)}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0.0"
+              max="3.0"
+              step="0.1"
+              value={currentBlurStrength}
+              onChange={(e) =>
+                onEffectsChange({
+                  ...effects,
+                  blur_strength: Math.round(parseFloat(e.target.value) * 10) / 10,
+                })
+              }
+              className="w-full cursor-pointer accent-[#859aea]"
+            />
+            <div className="flex items-center justify-between text-[10px] text-[#474648]">
+              <span>0.0</span>
+              <div className="flex items-center space-x-1.5">
+                {[0.0, 0.5, 1.1, 1.5, 2.0].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => onEffectsChange({ ...effects, blur_strength: s })}
+                    className={`px-1.5 py-0.2 rounded border transition-colors cursor-pointer ${
+                      Math.abs(currentBlurStrength - s) < 0.05
+                        ? 'border-[#859aea] text-[#859aea] bg-[#859aea]/10'
+                        : 'border-[#262529] text-[#929092] hover:text-[#e5e2e3]'
+                    }`}
+                  >
+                    {s === 1.1 ? (language === 'ru' ? '1.1 (дефолт)' : '1.1 (def)') : s.toFixed(1)}
+                  </button>
+                ))}
+              </div>
+              <span>3.0</span>
+            </div>
+          </div>
+
+          {/* Parameter 3: animate_blur */}
+          <div className="flex items-center justify-between pt-2 border-t border-[#262529]">
+            <div className="pr-3">
+              <div className="text-xs text-[#e5e2e3] font-medium">{t('persAnimateBlur')}</div>
+              <div className="text-[10px] text-[#929092] mt-0.5">{t('persAnimateBlurDesc')}</div>
+            </div>
             <Toggle
-              checked={effects.animate_blur ?? true}
+              checked={currentAnimateBlur}
               onChange={(val) => onEffectsChange({ ...effects, animate_blur: val })}
             />
           </div>
