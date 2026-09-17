@@ -31,9 +31,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 }) => {
   const { t, language } = useI18n();
 
-  const [showAdvanced, setShowAdvanced] = useState<boolean>(
-    Boolean(rule.size || rule.position || rule.border_width)
-  );
+  // Advanced geometry is collapsed by default
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
   const hasBlur = typeof rule.blur === 'boolean' ? rule.blur : true;
   const hasOpacity = typeof rule.opacity === 'number';
@@ -447,7 +446,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
   const [activeSearch, setActiveSearch] = useState('');
   const [rulesSearch, setRulesSearch] = useState('');
 
-  // Accordion state: both active windows and rules are CLOSED (null) by default
+  // Both active windows and rules are strictly CLOSED (null) by default
   const [expandedActiveWinKey, setExpandedActiveWinKey] = useState<string | null>(null);
   const [expandedRuleIndex, setExpandedRuleIndex] = useState<number | null>(null);
 
@@ -476,6 +475,11 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
     const interval = setInterval(fetchActive, 2500);
     return () => clearInterval(interval);
   }, []);
+
+  // Stable key for an active window
+  const getActiveWinKey = (win: ActiveWindow) => {
+    return `${win.app_id || 'noapp'}::${win.title || 'notitle'}`;
+  };
 
   // Smart matcher to find configured rule for a given active window
   const getMatchingRule = (win: ActiveWindow) => {
@@ -671,19 +675,22 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         </div>
       </div>
 
-      {/* ── Bento Grid: Row 2 (ACTIVE WINDOWS WITH SLIDING SETTINGS) ── */}
-      <div className="minimal-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-[#262529] flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+      {/* ── Bento Grid: Row 2 (ACTIVE WINDOWS - UNIFIED CARD STYLE) ─── */}
+      <div className="space-y-2">
+        {/* Active Windows Header Bar with Search */}
+        <div className="minimal-card px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
             <div className="w-7 h-7 rounded-full border border-[#859aea]/50 bg-[#859aea]/10 flex items-center justify-center text-xs font-semibold text-[#859aea]">
               ●
             </div>
-            <span className="text-xs font-semibold text-[#e5e2e3]">
-              {t('windowsActiveApps')}
-            </span>
-            <span className="text-[10px] text-[#929092]">
-              ({filteredActiveWindows.length} / {activeWindows.length})
-            </span>
+            <div>
+              <span className="text-xs font-semibold text-[#e5e2e3]">
+                {t('windowsActiveApps')}
+              </span>
+              <span className="text-[10px] text-[#929092] ml-2">
+                ({filteredActiveWindows.length} / {activeWindows.length})
+              </span>
+            </div>
           </div>
 
           <div className="w-48">
@@ -698,17 +705,17 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         </div>
 
         {activeWindows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[#929092]">
+          <div className="minimal-card px-4 py-8 text-center text-[#929092]">
             {t('windowsNoActiveApps')}
           </div>
         ) : filteredActiveWindows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[#929092]">
+          <div className="minimal-card px-4 py-8 text-center text-[#929092]">
             {t('windowsNoMatchingRules')}
           </div>
         ) : (
-          <div className="divide-y divide-[#262529]">
-            {filteredActiveWindows.map((win, idx) => {
-              const winKey = `${win.app_id || 'noapp'}::${win.title || 'notitle'}::${idx}`;
+          <div className="space-y-2">
+            {filteredActiveWindows.map((win) => {
+              const winKey = getActiveWinKey(win);
               const isExpanded = expandedActiveWinKey === winKey;
               const matched = getMatchingRule(win);
               const isConfigured = matched !== null;
@@ -754,59 +761,79 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
               };
 
               return (
-                <div key={winKey} className="transition-colors">
-                  {/* Active Window Accordion Trigger Row */}
+                <div
+                  key={winKey}
+                  className={`minimal-card overflow-hidden transition-all border ${
+                    isExpanded
+                      ? 'border-[#859aea]/50 bg-[#1a191d]'
+                      : 'border-[#262529] hover:border-[#36353b]'
+                  }`}
+                >
+                  {/* Active Window Accordion Trigger Row: unified 1-line card style */}
                   <div
                     onClick={() => setExpandedActiveWinKey(isExpanded ? null : winKey)}
-                    className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none ${
-                      isExpanded ? 'bg-[#201f21]/60' : ''
-                    }`}
+                    className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none"
                   >
-                    <div className="flex items-center space-x-2.5 min-w-0 pr-3">
+                    <div className="flex items-center space-x-2.5 min-w-0 pr-2">
                       {/* Arrow indicator */}
                       <span className="text-[#859aea] text-xs transition-transform duration-200 shrink-0">
                         {isExpanded ? '▼' : '▶'}
                       </span>
 
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                          {win.app_id && (
-                            <span className="text-[#859aea] font-semibold text-[11px] shrink-0">
-                              [{win.app_id}]
-                            </span>
-                          )}
-
-                          {isConfigured ? (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#a3d4a0]/15 border-[#a3d4a0]/30 text-[#a3d4a0]">
-                              {t('windowsConfigured')}
-                            </span>
-                          ) : (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092]">
-                              {t('windowsNotConfigured')}
-                            </span>
-                          )}
-
-                          {win.is_widget && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/15 border-[#c0c6dc]/30 text-[#c0c6dc]">
-                              {t('windowsWidgetBadge')}
-                            </span>
-                          )}
-
-                          <span className="text-[10px] text-[#474648] font-mono">
-                            {win.size[0]}×{win.size[1]}
+                      <div className="flex items-center space-x-2 flex-wrap gap-y-1 min-w-0">
+                        {win.app_id ? (
+                          <span className="text-[#859aea] font-bold text-xs shrink-0 font-mono">
+                            [{win.app_id}]
                           </span>
-                        </div>
+                        ) : (
+                          <span className="text-[#929092] font-semibold text-xs shrink-0 font-mono">
+                            [{t('windowsAppFallback')}]
+                          </span>
+                        )}
 
-                        <div className="text-xs text-[#e5e2e3] truncate">
-                          {win.title || t('windowsAppFallback')}
-                        </div>
+                        {win.title && (
+                          <span className="text-xs text-[#e5e2e3] truncate max-w-[200px]">
+                            "{win.title}"
+                          </span>
+                        )}
+
+                        {isConfigured ? (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#a3d4a0]/15 border-[#a3d4a0]/30 text-[#a3d4a0]">
+                            {t('windowsConfigured')}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092]">
+                            {t('windowsNotConfigured')}
+                          </span>
+                        )}
+
+                        {win.is_widget && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/15 border-[#c0c6dc]/30 text-[#c0c6dc]">
+                            {t('windowsWidgetBadge')}
+                          </span>
+                        )}
+
+                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092] font-mono">
+                          {win.size[0]}×{win.size[1]}
+                        </span>
                       </div>
                     </div>
 
+                    {/* Right side: NO "Настройки" button, only delete × if rule exists */}
                     <div className="flex items-center space-x-2 shrink-0 ml-2">
-                      <span className="text-[10px] text-[#859aea] hover:underline font-medium">
-                        {isExpanded ? t('windowsCollapse') : t('windowsExpand')}
-                      </span>
+                      {isConfigured && matched && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteRule(matched.index);
+                          }}
+                          className="w-6 h-6 rounded-lg border border-[#262529] hover:border-[#ffb4ab] text-[12px] text-[#929092] hover:text-[#ffb4ab] flex items-center justify-center transition-colors cursor-pointer"
+                          title={t('windowsDeleteRule')}
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -830,7 +857,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         )}
       </div>
 
-      {/* ── Bento Grid: Row 3 (CONFIGURED RULES - ACCORDION LIST) ─────── */}
+      {/* ── Bento Grid: Row 3 (CONFIGURED RULES - UNIFIED CARD STYLE) ─── */}
       <div className="space-y-2">
         {/* Rules Header Bar with Search */}
         <div className="minimal-card px-4 py-3 flex items-center justify-between">
@@ -883,7 +910,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                       : 'border-[#262529] hover:border-[#36353b]'
                   }`}
                 >
-                  {/* Rule Header Row: Always visible, acts as accordion trigger */}
+                  {/* Rule Header Row: unified 1-line card style */}
                   <div
                     onClick={() => setExpandedRuleIndex(isExpanded ? null : index)}
                     className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none"
@@ -894,14 +921,14 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                         {isExpanded ? '▼' : '▶'}
                       </span>
 
-                      {/* Rule target identifiers */}
+                      {/* Rule target identifiers & Badges */}
                       <div className="flex items-center space-x-2 flex-wrap gap-y-1 min-w-0">
                         {rule.app_id ? (
-                          <span className="text-[#859aea] font-bold text-xs shrink-0">
+                          <span className="text-[#859aea] font-bold text-xs shrink-0 font-mono">
                             [{rule.app_id}]
                           </span>
                         ) : (
-                          <span className="text-[#929092] font-semibold text-xs shrink-0">
+                          <span className="text-[#929092] font-semibold text-xs shrink-0 font-mono">
                             [{t('windowsAppFallback')}]
                           </span>
                         )}
@@ -913,44 +940,40 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                         )}
 
                         {/* Property summary badges (NO BLUR BADGE SHOWN BEFORE OPENING) */}
-                        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                          {typeof rule.opacity === 'number' && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#e8cf8d]/10 border-[#e8cf8d]/30 text-[#e8cf8d]">
-                              {Math.round(rule.opacity * 100)}%
-                            </span>
-                          )}
+                        {typeof rule.opacity === 'number' && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#e8cf8d]/10 border-[#e8cf8d]/30 text-[#e8cf8d]">
+                            {Math.round(rule.opacity * 100)}%
+                          </span>
+                        )}
 
-                          {rule.decoration && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/10 border-[#c0c6dc]/30 text-[#c0c6dc]">
-                              {rule.decoration}
-                            </span>
-                          )}
+                        {rule.decoration && rule.decoration !== 'none' && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/10 border-[#c0c6dc]/30 text-[#c0c6dc]">
+                            {rule.decoration}
+                          </span>
+                        )}
 
-                          {rule.sticky && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/10 border-[#859aea]/30 text-[#859aea]">
-                              sticky
-                            </span>
-                          )}
+                        {rule.sticky && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/10 border-[#859aea]/30 text-[#859aea]">
+                            sticky
+                          </span>
+                        )}
 
-                          {rule.widget && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/10 border-[#859aea]/30 text-[#859aea]">
-                              widget
-                            </span>
-                          )}
+                        {rule.widget && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/10 border-[#859aea]/30 text-[#859aea]">
+                            widget
+                          </span>
+                        )}
 
-                          {rule.size && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092]">
-                              {rule.size[0]}×{rule.size[1]}
-                            </span>
-                          )}
-                        </div>
+                        {rule.size && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092] font-mono">
+                            {rule.size[0]}×{rule.size[1]}
+                          </span>
+                        )}
                       </div>
                     </div>
 
+                    {/* Right side: NO "Настройки" button, only delete × */}
                     <div className="flex items-center space-x-2 shrink-0 ml-2">
-                      <span className="text-[10px] text-[#859aea] hover:underline font-medium">
-                        {isExpanded ? t('windowsCollapse') : t('windowsExpand')}
-                      </span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -965,7 +988,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
                     </div>
                   </div>
 
-                  {/* ── Inline Sliding Settings (Visible only when Expanded) ─ */}
+                  {/* Inline Sliding Settings (Visible only when Expanded) */}
                   {isExpanded && (
                     <RuleEditor
                       rule={rule}
