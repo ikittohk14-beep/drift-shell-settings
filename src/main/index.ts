@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, protocol, net } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol, net, nativeImage } from 'electron';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import fs from 'node:fs';
@@ -278,6 +278,39 @@ function getDriftwmActiveWindows(): ActiveWindow[] {
 
 let currentWallpaperDir = path.join(HOME_DIR, 'Пикчи', 'Обои');
 
+const THUMB_CACHE_DIR = path.join(HOME_DIR, '.cache', 'drift-shell-settings', 'thumbs');
+
+function getThumbnailPreviewUrl(fullPath: string): string {
+  try {
+    if (!fs.existsSync(THUMB_CACHE_DIR)) {
+      fs.mkdirSync(THUMB_CACHE_DIR, { recursive: true });
+    }
+    const stat = fs.statSync(fullPath);
+    const baseName = path.basename(fullPath, path.extname(fullPath));
+    const cacheKey = `${baseName}_${stat.size}_${Math.round(stat.mtimeMs)}_q4.jpg`;
+    const thumbPath = path.join(THUMB_CACHE_DIR, cacheKey);
+
+    if (fs.existsSync(thumbPath)) {
+      return pathToFileURL(thumbPath).toString();
+    }
+
+    const img = nativeImage.createFromPath(fullPath);
+    const size = img.getSize();
+    if (size.width > 0 && size.height > 0) {
+      // 1/4 dimensions for lightweight rendering in the gallery
+      const targetW = Math.max(160, Math.round(size.width / 4));
+      const targetH = Math.max(90, Math.round(size.height / 4));
+      const resized = img.resize({ width: targetW, height: targetH, quality: 'good' });
+      const jpgBuf = resized.toJPEG(75);
+      fs.writeFileSync(thumbPath, jpgBuf);
+      return pathToFileURL(thumbPath).toString();
+    }
+  } catch (err) {
+    console.error('[Wallpapers] Thumbnail generation error for', fullPath, err);
+  }
+  return pathToFileURL(fullPath).toString();
+}
+
 function getAvailableWallpapers(targetDir?: string): WallpaperItem[] {
   const result: WallpaperItem[] = [];
   const dir = targetDir || currentWallpaperDir;
@@ -302,7 +335,7 @@ function getAvailableWallpapers(targetDir?: string): WallpaperItem[] {
               name,
               path: normalizePathForConfig(fullPath),
               type: isShader ? 'shader' : 'image',
-              previewUrl: isShader ? undefined : pathToFileURL(fullPath).toString(),
+              previewUrl: isShader ? undefined : getThumbnailPreviewUrl(fullPath),
             });
           }
         }

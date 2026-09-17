@@ -446,7 +446,11 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
   const [activeSearch, setActiveSearch] = useState('');
   const [rulesSearch, setRulesSearch] = useState('');
 
-  // Both active windows and rules are strictly CLOSED (null) by default
+  // Section collapse states (both sections open by default, toggleable by header click)
+  const [isSectionActiveOpen, setIsSectionActiveOpen] = useState<boolean>(true);
+  const [isSectionRulesOpen, setIsSectionRulesOpen] = useState<boolean>(true);
+
+  // Individual item accordion states: strictly closed (null) by default
   const [expandedActiveWinKey, setExpandedActiveWinKey] = useState<string | null>(null);
   const [expandedRuleIndex, setExpandedRuleIndex] = useState<number | null>(null);
 
@@ -570,6 +574,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
       position: initial?.position,
     };
 
+    setIsSectionRulesOpen(true);
     onChange([newRule, ...rules]);
     setExpandedRuleIndex(0);
     setTimeout(() => {
@@ -675,11 +680,14 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
         </div>
       </div>
 
-      {/* ── Bento Grid: Row 2 (ACTIVE WINDOWS - UNIFIED CARD STYLE) ─── */}
-      <div className="space-y-2">
-        {/* Active Windows Header Bar with Search */}
-        <div className="minimal-card px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
+      {/* ── Bento Grid: Row 2 (ACTIVE WINDOWS - SINGLE UNIFIED CARD) ── */}
+      <div className="minimal-card overflow-hidden">
+        {/* Section Header: Clickable to toggle entire section */}
+        <div
+          onClick={() => setIsSectionActiveOpen(!isSectionActiveOpen)}
+          className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none"
+        >
+          <div className="flex items-center space-x-2.5 min-w-0">
             <div className="w-7 h-7 rounded-full border border-[#859aea]/50 bg-[#859aea]/10 flex items-center justify-center text-xs font-semibold text-[#859aea]">
               ●
             </div>
@@ -693,175 +701,178 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
             </div>
           </div>
 
-          <div className="w-48">
-            <input
-              type="text"
-              value={activeSearch}
-              onChange={(e) => setActiveSearch(e.target.value)}
-              placeholder={t('windowsActiveFilterPlaceholder')}
-              className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-[11px] text-[#e5e2e3] outline-none placeholder:text-[#474648]"
-            />
+          <div className="flex items-center space-x-2.5">
+            <div className="w-48" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="text"
+                value={activeSearch}
+                onChange={(e) => setActiveSearch(e.target.value)}
+                placeholder={t('windowsActiveFilterPlaceholder')}
+                className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-[11px] text-[#e5e2e3] outline-none placeholder:text-[#474648]"
+              />
+            </div>
+            <span className="text-[#859aea] text-xs font-mono font-bold w-4 text-center select-none">
+              {isSectionActiveOpen ? 'v' : '>'}
+            </span>
           </div>
         </div>
 
-        {activeWindows.length === 0 ? (
-          <div className="minimal-card px-4 py-8 text-center text-[#929092]">
-            {t('windowsNoActiveApps')}
-          </div>
-        ) : filteredActiveWindows.length === 0 ? (
-          <div className="minimal-card px-4 py-8 text-center text-[#929092]">
-            {t('windowsNoMatchingRules')}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredActiveWindows.map((win) => {
-              const winKey = getActiveWinKey(win);
-              const isExpanded = expandedActiveWinKey === winKey;
-              const matched = getMatchingRule(win);
-              const isConfigured = matched !== null;
+        {/* Section Body */}
+        {isSectionActiveOpen && (
+          activeWindows.length === 0 ? (
+            <div className="px-4 py-8 text-center text-[#929092] border-t border-[#262529]">
+              {t('windowsNoActiveApps')}
+            </div>
+          ) : filteredActiveWindows.length === 0 ? (
+            <div className="px-4 py-8 text-center text-[#929092] border-t border-[#262529]">
+              {t('windowsNoMatchingRules')}
+            </div>
+          ) : (
+            <div className="divide-y divide-[#262529] border-t border-[#262529]">
+              {filteredActiveWindows.map((win) => {
+                const winKey = getActiveWinKey(win);
+                const isExpanded = expandedActiveWinKey === winKey;
+                const matched = getMatchingRule(win);
+                const isConfigured = matched !== null;
 
-              // Draft or existing rule for this active window
-              const currentRule: WindowRule = isConfigured
-                ? matched.rule
-                : activeDrafts[winKey] || {
-                    app_id: win.app_id || '',
-                    title: !win.app_id ? win.title : undefined,
-                    size: win.size,
-                    position: win.position,
-                    widget: win.is_widget,
-                    blur: true,
-                    opacity: 0.85,
-                    decoration: 'none',
-                  };
+                const currentRule: WindowRule = isConfigured
+                  ? matched.rule
+                  : activeDrafts[winKey] || {
+                      app_id: win.app_id || '',
+                      title: !win.app_id ? win.title : undefined,
+                      size: win.size,
+                      position: win.position,
+                      widget: win.is_widget,
+                      blur: true,
+                      opacity: 0.85,
+                      decoration: 'none',
+                    };
 
-              const handleUpdateActiveWindow = (partial: Partial<WindowRule>) => {
-                if (isConfigured && matched) {
-                  updateRuleAt(matched.index, partial);
-                } else {
-                  const newDraft: WindowRule = {
-                    ...currentRule,
-                    ...partial,
-                  };
-                  if (partial.app_id !== undefined || partial.title !== undefined) {
-                    setActiveDrafts((prev) => ({ ...prev, [winKey]: newDraft }));
+                const handleUpdateActiveWindow = (partial: Partial<WindowRule>) => {
+                  if (isConfigured && matched) {
+                    updateRuleAt(matched.index, partial);
                   } else {
-                    // User toggled an effect or geometry -> promote and save as configured rule!
-                    onChange([newDraft, ...rules]);
+                    const newDraft: WindowRule = {
+                      ...currentRule,
+                      ...partial,
+                    };
+                    if (partial.app_id !== undefined || partial.title !== undefined) {
+                      setActiveDrafts((prev) => ({ ...prev, [winKey]: newDraft }));
+                    } else {
+                      onChange([newDraft, ...rules]);
+                    }
                   }
-                }
-              };
+                };
 
-              const handleSaveActiveWindowNew = () => {
-                onChange([currentRule, ...rules]);
-                setActiveDrafts((prev) => {
-                  const copy = { ...prev };
-                  delete copy[winKey];
-                  return copy;
-                });
-              };
+                const handleSaveActiveWindowNew = () => {
+                  onChange([currentRule, ...rules]);
+                  setActiveDrafts((prev) => {
+                    const copy = { ...prev };
+                    delete copy[winKey];
+                    return copy;
+                  });
+                };
 
-              return (
-                <div
-                  key={winKey}
-                  className={`minimal-card overflow-hidden transition-all border ${
-                    isExpanded
-                      ? 'border-[#859aea]/50 bg-[#1a191d]'
-                      : 'border-[#262529] hover:border-[#36353b]'
-                  }`}
-                >
-                  {/* Active Window Accordion Trigger Row: unified 1-line card style */}
-                  <div
-                    onClick={() => setExpandedActiveWinKey(isExpanded ? null : winKey)}
-                    className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none"
-                  >
-                    <div className="flex items-center space-x-2.5 min-w-0 pr-2">
-                      {/* Arrow indicator */}
-                      <span className="text-[#859aea] text-xs transition-transform duration-200 shrink-0">
-                        {isExpanded ? '▼' : '▶'}
-                      </span>
+                return (
+                  <div key={winKey} className="transition-colors">
+                    {/* Item row with divider line */}
+                    <div
+                      onClick={() => setExpandedActiveWinKey(isExpanded ? null : winKey)}
+                      className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none ${
+                        isExpanded ? 'bg-[#201f21]/60' : ''
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                        {/* No arrow on left, directly app_id, title and badges */}
+                        <div className="flex items-center space-x-2 flex-wrap gap-y-1 min-w-0">
+                          {win.app_id ? (
+                            <span className="text-[#859aea] font-bold text-xs shrink-0 font-mono">
+                              [{win.app_id}]
+                            </span>
+                          ) : (
+                            <span className="text-[#929092] font-semibold text-xs shrink-0 font-mono">
+                              [{t('windowsAppFallback')}]
+                            </span>
+                          )}
 
-                      <div className="flex items-center space-x-2 flex-wrap gap-y-1 min-w-0">
-                        {win.app_id ? (
-                          <span className="text-[#859aea] font-bold text-xs shrink-0 font-mono">
-                            [{win.app_id}]
+                          {win.title && (
+                            <span className="text-xs text-[#e5e2e3] truncate max-w-[200px]">
+                              "{win.title}"
+                            </span>
+                          )}
+
+                          {isConfigured ? (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#a3d4a0]/15 border-[#a3d4a0]/30 text-[#a3d4a0]">
+                              {t('windowsConfigured')}
+                            </span>
+                          ) : (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092]">
+                              {t('windowsNotConfigured')}
+                            </span>
+                          )}
+
+                          {win.is_widget && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/15 border-[#c0c6dc]/30 text-[#c0c6dc]">
+                              {t('windowsWidgetBadge')}
+                            </span>
+                          )}
+
+                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092] font-mono">
+                            {win.size[0]}×{win.size[1]}
                           </span>
-                        ) : (
-                          <span className="text-[#929092] font-semibold text-xs shrink-0 font-mono">
-                            [{t('windowsAppFallback')}]
-                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right side: Delete button if configured + chevron (v / ^) */}
+                      <div className="flex items-center space-x-2 shrink-0 ml-2">
+                        {isConfigured && matched && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteRule(matched.index);
+                            }}
+                            className="w-6 h-6 rounded-lg border border-[#262529] hover:border-[#ffb4ab] text-[12px] text-[#929092] hover:text-[#ffb4ab] flex items-center justify-center transition-colors cursor-pointer"
+                            title={t('windowsDeleteRule')}
+                          >
+                            ×
+                          </button>
                         )}
-
-                        {win.title && (
-                          <span className="text-xs text-[#e5e2e3] truncate max-w-[200px]">
-                            "{win.title}"
-                          </span>
-                        )}
-
-                        {isConfigured ? (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#a3d4a0]/15 border-[#a3d4a0]/30 text-[#a3d4a0]">
-                            {t('windowsConfigured')}
-                          </span>
-                        ) : (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092]">
-                            {t('windowsNotConfigured')}
-                          </span>
-                        )}
-
-                        {win.is_widget && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/15 border-[#c0c6dc]/30 text-[#c0c6dc]">
-                            {t('windowsWidgetBadge')}
-                          </span>
-                        )}
-
-                        <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092] font-mono">
-                          {win.size[0]}×{win.size[1]}
+                        <span className="text-[#859aea] font-mono text-xs font-bold w-4 text-center select-none">
+                          {isExpanded ? '^' : 'v'}
                         </span>
                       </div>
                     </div>
 
-                    {/* Right side: NO "Настройки" button, only delete × if rule exists */}
-                    <div className="flex items-center space-x-2 shrink-0 ml-2">
-                      {isConfigured && matched && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteRule(matched.index);
-                          }}
-                          className="w-6 h-6 rounded-lg border border-[#262529] hover:border-[#ffb4ab] text-[12px] text-[#929092] hover:text-[#ffb4ab] flex items-center justify-center transition-colors cursor-pointer"
-                          title={t('windowsDeleteRule')}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
+                    {/* Inline Sliding Settings Editor */}
+                    {isExpanded && (
+                      <RuleEditor
+                        rule={currentRule}
+                        onUpdate={handleUpdateActiveWindow}
+                        onDelete={isConfigured && matched ? () => handleDeleteRule(matched.index) : undefined}
+                        onCollapse={() => setExpandedActiveWinKey(null)}
+                        onSaveNew={!isConfigured ? handleSaveActiveWindowNew : undefined}
+                        isNew={!isConfigured}
+                        uniqueAppIds={uniqueAppIds}
+                        activeWindow={win}
+                      />
+                    )}
                   </div>
-
-                  {/* Inline Sliding Settings Editor for Active Window */}
-                  {isExpanded && (
-                    <RuleEditor
-                      rule={currentRule}
-                      onUpdate={handleUpdateActiveWindow}
-                      onDelete={isConfigured && matched ? () => handleDeleteRule(matched.index) : undefined}
-                      onCollapse={() => setExpandedActiveWinKey(null)}
-                      onSaveNew={!isConfigured ? handleSaveActiveWindowNew : undefined}
-                      isNew={!isConfigured}
-                      uniqueAppIds={uniqueAppIds}
-                      activeWindow={win}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )
         )}
       </div>
 
-      {/* ── Bento Grid: Row 3 (CONFIGURED RULES - UNIFIED CARD STYLE) ─── */}
-      <div className="space-y-2">
-        {/* Rules Header Bar with Search */}
-        <div className="minimal-card px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
+      {/* ── Bento Grid: Row 3 (CONFIGURED RULES - SINGLE UNIFIED CARD) ─── */}
+      <div className="minimal-card overflow-hidden">
+        {/* Section Header: Clickable to toggle entire section */}
+        <div
+          onClick={() => setIsSectionRulesOpen(!isSectionRulesOpen)}
+          className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none"
+        >
+          <div className="flex items-center space-x-2.5 min-w-0">
             <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
               2
             </div>
@@ -875,133 +886,136 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
             </div>
           </div>
 
-          <div className="w-56">
-            <input
-              type="text"
-              value={rulesSearch}
-              onChange={(e) => setRulesSearch(e.target.value)}
-              placeholder={t('windowsSearchPlaceholder')}
-              className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-[11px] text-[#e5e2e3] outline-none placeholder:text-[#474648]"
-            />
+          <div className="flex items-center space-x-2.5">
+            <div className="w-56" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="text"
+                value={rulesSearch}
+                onChange={(e) => setRulesSearch(e.target.value)}
+                placeholder={t('windowsSearchPlaceholder')}
+                className="w-full bg-[#131315] border border-[#262529] focus:border-[#859aea] rounded-lg px-2.5 py-1 text-[11px] text-[#e5e2e3] outline-none placeholder:text-[#474648]"
+              />
+            </div>
+            <span className="text-[#859aea] text-xs font-mono font-bold w-4 text-center select-none">
+              {isSectionRulesOpen ? 'v' : '>'}
+            </span>
           </div>
         </div>
 
-        {/* Rules Accordion Items */}
-        {rules.length === 0 ? (
-          <div className="minimal-card px-4 py-8 text-center text-[#929092]">
-            {t('windowsNoRules')}
-          </div>
-        ) : filteredRules.length === 0 ? (
-          <div className="minimal-card px-4 py-8 text-center text-[#929092]">
-            {t('windowsNoMatchingRules')}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredRules.map(({ rule, index }) => {
-              const isExpanded = expandedRuleIndex === index;
+        {/* Section Body */}
+        {isSectionRulesOpen && (
+          rules.length === 0 ? (
+            <div className="px-4 py-8 text-center text-[#929092] border-t border-[#262529]">
+              {t('windowsNoRules')}
+            </div>
+          ) : filteredRules.length === 0 ? (
+            <div className="px-4 py-8 text-center text-[#929092] border-t border-[#262529]">
+              {t('windowsNoMatchingRules')}
+            </div>
+          ) : (
+            <div className="divide-y divide-[#262529] border-t border-[#262529]">
+              {filteredRules.map(({ rule, index }) => {
+                const isExpanded = expandedRuleIndex === index;
 
-              return (
-                <div
-                  key={`${rule.app_id || ''}-${rule.title || ''}-${index}`}
-                  ref={(el) => (ruleRefs.current[index] = el)}
-                  className={`minimal-card overflow-hidden transition-all border ${
-                    isExpanded
-                      ? 'border-[#859aea]/50 bg-[#1a191d]'
-                      : 'border-[#262529] hover:border-[#36353b]'
-                  }`}
-                >
-                  {/* Rule Header Row: unified 1-line card style */}
+                return (
                   <div
-                    onClick={() => setExpandedRuleIndex(isExpanded ? null : index)}
-                    className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none"
+                    key={`${rule.app_id || ''}-${rule.title || ''}-${index}`}
+                    ref={(el) => (ruleRefs.current[index] = el)}
+                    className="transition-colors"
                   >
-                    <div className="flex items-center space-x-2.5 min-w-0 pr-2">
-                      {/* Arrow indicator */}
-                      <span className="text-[#859aea] text-xs transition-transform duration-200 shrink-0">
-                        {isExpanded ? '▼' : '▶'}
-                      </span>
+                    {/* Rule Row with divider line */}
+                    <div
+                      onClick={() => setExpandedRuleIndex(isExpanded ? null : index)}
+                      className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[#201f21]/40 transition-colors select-none ${
+                        isExpanded ? 'bg-[#201f21]/60' : ''
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                        {/* No arrow on left, directly app_id and title and badges */}
+                        <div className="flex items-center space-x-2 flex-wrap gap-y-1 min-w-0">
+                          {rule.app_id ? (
+                            <span className="text-[#859aea] font-bold text-xs shrink-0 font-mono">
+                              [{rule.app_id}]
+                            </span>
+                          ) : (
+                            <span className="text-[#929092] font-semibold text-xs shrink-0 font-mono">
+                              [{t('windowsAppFallback')}]
+                            </span>
+                          )}
 
-                      {/* Rule target identifiers & Badges */}
-                      <div className="flex items-center space-x-2 flex-wrap gap-y-1 min-w-0">
-                        {rule.app_id ? (
-                          <span className="text-[#859aea] font-bold text-xs shrink-0 font-mono">
-                            [{rule.app_id}]
-                          </span>
-                        ) : (
-                          <span className="text-[#929092] font-semibold text-xs shrink-0 font-mono">
-                            [{t('windowsAppFallback')}]
-                          </span>
-                        )}
+                          {rule.title && (
+                            <span className="text-xs text-[#e5e2e3] truncate max-w-[200px]">
+                              "{rule.title}"
+                            </span>
+                          )}
 
-                        {rule.title && (
-                          <span className="text-xs text-[#e5e2e3] truncate max-w-[200px]">
-                            "{rule.title}"
-                          </span>
-                        )}
+                          {/* Property summary badges (NO BLUR BADGE SHOWN BEFORE OPENING) */}
+                          {typeof rule.opacity === 'number' && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#e8cf8d]/10 border-[#e8cf8d]/30 text-[#e8cf8d]">
+                              {Math.round(rule.opacity * 100)}%
+                            </span>
+                          )}
 
-                        {/* Property summary badges (NO BLUR BADGE SHOWN BEFORE OPENING) */}
-                        {typeof rule.opacity === 'number' && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#e8cf8d]/10 border-[#e8cf8d]/30 text-[#e8cf8d]">
-                            {Math.round(rule.opacity * 100)}%
-                          </span>
-                        )}
+                          {rule.decoration && rule.decoration !== 'none' && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/10 border-[#c0c6dc]/30 text-[#c0c6dc]">
+                              {rule.decoration}
+                            </span>
+                          )}
 
-                        {rule.decoration && rule.decoration !== 'none' && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#c0c6dc]/10 border-[#c0c6dc]/30 text-[#c0c6dc]">
-                            {rule.decoration}
-                          </span>
-                        )}
+                          {rule.sticky && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/10 border-[#859aea]/30 text-[#859aea]">
+                              sticky
+                            </span>
+                          )}
 
-                        {rule.sticky && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/10 border-[#859aea]/30 text-[#859aea]">
-                            sticky
-                          </span>
-                        )}
+                          {rule.widget && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/10 border-[#859aea]/30 text-[#859aea]">
+                              widget
+                            </span>
+                          )}
 
-                        {rule.widget && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#859aea]/10 border-[#859aea]/30 text-[#859aea]">
-                            widget
-                          </span>
-                        )}
+                          {rule.size && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092] font-mono">
+                              {rule.size[0]}×{rule.size[1]}
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                        {rule.size && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded border bg-[#262529] border-[#36353b] text-[#929092] font-mono">
-                            {rule.size[0]}×{rule.size[1]}
-                          </span>
-                        )}
+                      {/* Right side: Delete button + chevron (v / ^) */}
+                      <div className="flex items-center space-x-2 shrink-0 ml-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteRule(index);
+                          }}
+                          className="w-6 h-6 rounded-lg border border-[#262529] hover:border-[#ffb4ab] text-[12px] text-[#929092] hover:text-[#ffb4ab] flex items-center justify-center transition-colors cursor-pointer"
+                          title={t('windowsDeleteRule')}
+                        >
+                          ×
+                        </button>
+                        <span className="text-[#859aea] font-mono text-xs font-bold w-4 text-center select-none">
+                          {isExpanded ? '^' : 'v'}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Right side: NO "Настройки" button, only delete × */}
-                    <div className="flex items-center space-x-2 shrink-0 ml-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteRule(index);
-                        }}
-                        className="w-6 h-6 rounded-lg border border-[#262529] hover:border-[#ffb4ab] text-[12px] text-[#929092] hover:text-[#ffb4ab] flex items-center justify-center transition-colors cursor-pointer"
-                        title={t('windowsDeleteRule')}
-                      >
-                        ×
-                      </button>
-                    </div>
+                    {/* Inline Sliding Settings */}
+                    {isExpanded && (
+                      <RuleEditor
+                        rule={rule}
+                        onUpdate={(partial) => updateRuleAt(index, partial)}
+                        onDelete={() => handleDeleteRule(index)}
+                        onCollapse={() => setExpandedRuleIndex(null)}
+                        uniqueAppIds={uniqueAppIds}
+                      />
+                    )}
                   </div>
-
-                  {/* Inline Sliding Settings (Visible only when Expanded) */}
-                  {isExpanded && (
-                    <RuleEditor
-                      rule={rule}
-                      onUpdate={(partial) => updateRuleAt(index, partial)}
-                      onDelete={() => handleDeleteRule(index)}
-                      onCollapse={() => setExpandedRuleIndex(null)}
-                      uniqueAppIds={uniqueAppIds}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )
         )}
       </div>
     </div>
