@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Check, AlertTriangle } from 'lucide-react';
+import { useI18n } from '../i18n';
 import type { ConfigValidationResult } from '../../../preload/types';
 
 interface TitlebarProps {
@@ -13,84 +13,79 @@ interface TitlebarProps {
 export const Titlebar: React.FC<TitlebarProps> = ({
   title,
   validation,
-  isValidating,
   isSaving,
-  onValidate,
 }) => {
-  const handleMinimize = () => {
-    try {
-      window.driftAPI?.minimizeWindow();
-    } catch (err) {
-      console.error('[Titlebar] Minimize error:', err);
-    }
-  };
-
-  const handleClose = () => {
-    try {
-      window.driftAPI?.closeWindow();
-    } catch (err) {
-      console.error('[Titlebar] Close error:', err);
-    }
-  };
+  const { language, setLanguage, t } = useI18n();
 
   return (
-    <header className="h-12 px-4 flex items-center justify-between select-none app-drag shrink-0 z-50 border-b border-white/[0.06] bg-black/15 backdrop-blur-md">
-      {/* Left: Window Dots */}
-      <div className="flex items-center space-x-2 app-no-drag">
-        <button
-          type="button"
-          onClick={handleClose}
-          aria-label="Закрыть"
-          title="Закрыть"
-          className="w-3 h-3 rounded-full bg-[#ff5f56] hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-sm"
-        />
-        <button
-          type="button"
-          onClick={handleMinimize}
-          aria-label="Свернуть"
-          title="Свернуть"
-          className="w-3 h-3 rounded-full bg-[#ffbd2e] hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-sm"
-        />
+    <header className="h-9 px-4 flex items-center justify-between select-none app-drag shrink-0 border-b border-[#262529] bg-[#131315] z-50 font-mono text-xs">
+      {/* Left: Window Title and Active Tab with minimalist divider | */}
+      <div className="flex items-center space-x-2.5 pointer-events-none">
+        <span className="text-[#c2c6d6] font-bold tracking-tight">
+          :: drift-shell ::
+        </span>
+        <span className="text-[#474648]">|</span>
+        <span className="text-[#e5e2e3] font-medium">
+          {title}
+        </span>
       </div>
 
-      {/* Center: Title / Active Category Name */}
-      <div className="text-xs font-semibold text-white/90 tracking-wide">
-        {title}
+      {/* Center: Subtle shortcut hint */}
+      <div className="hidden sm:flex items-center text-[10px] text-[#474648] pointer-events-none tracking-wide">
+        [ esc / super+q to close ]
       </div>
 
-      {/* Right: Auto-Apply Status */}
-      <div className="flex items-center space-x-2 app-no-drag">
+      {/* Right: Status and Language Switcher */}
+      <div className="flex items-center space-x-3 app-no-drag">
+        {/* Terminal Dot Status */}
         {isSaving ? (
-          <div className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs text-white/60 bg-white/[0.06] animate-pulse">
-            <RefreshCw className="w-3 h-3 animate-spin text-[#007aff]" />
-            <span>Применение...</span>
-          </div>
+          <span className="flex items-center space-x-1.5 text-[11px] text-[#859aea]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#859aea] animate-ping" />
+            <span>{t('saving')}</span>
+          </span>
         ) : validation && !validation.valid ? (
-          <div
-            className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs text-[#ff3b30] bg-[#ff3b30]/10 border border-[#ff3b30]/20"
+          <span
+            className="flex items-center space-x-1.5 text-[11px] text-[#ffb4ab]"
             title={validation.error || validation.output}
           >
-            <AlertTriangle className="w-3 h-3" />
-            <span>Ошибка конфига</span>
-          </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ffb4ab]" />
+            <span>{t('error')}</span>
+          </span>
         ) : (
-          <div className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs text-[#34c759] bg-[#34c759]/10 border border-[#34c759]/20">
-            <Check className="w-3 h-3" />
-            <span>Применено</span>
-          </div>
+          <span className="flex items-center space-x-1.5 text-[11px] text-[#a3d4a0]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a3d4a0]" />
+            <span>{t('ok')}</span>
+          </span>
         )}
 
-        <button
-          type="button"
-          onClick={onValidate}
-          disabled={isValidating}
-          className="p-1.5 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-          title="Проверить синтаксис конфига driftwm"
-        >
-          <RefreshCw
-            className={`w-3.5 h-3.5 ${isValidating ? 'animate-spin text-[#007aff]' : ''}`}
-          />
-        </button>
+        <span className="text-[#262529]">|</span>
+
+        {/* Minimalist Text-Only Language Switcher */}
+        <div className="flex items-center space-x-1 text-[11px]">
+          <button
+            type="button"
+            onClick={() => setLanguage('ru')}
+            className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+              language === 'ru'
+                ? 'bg-[#201f21] text-[#e5e2e3] font-bold border border-[#262529]'
+                : 'text-[#929092] hover:text-[#e5e2e3]'
+            }`}
+          >
+            ru
+          </button>
+          <span className="text-[#474648]">/</span>
+          <button
+            type="button"
+            onClick={() => setLanguage('en')}
+            className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+              language === 'en'
+                ? 'bg-[#201f21] text-[#e5e2e3] font-bold border border-[#262529]'
+                : 'text-[#929092] hover:text-[#e5e2e3]'
+            }`}
+          >
+            en
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlaySquare, Keyboard, Trash2, Terminal } from 'lucide-react';
+import { useI18n } from '../../i18n';
 
 interface ShortcutsAutostartViewProps {
   autostart: string[];
@@ -14,6 +14,7 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
   onAutostartChange,
   onKeybindingsChange,
 }) => {
+  const { t } = useI18n();
   const [newCmd, setNewCmd] = useState<string>('');
   const [comboInput, setComboInput] = useState<string>('');
   const [actionInput, setActionInput] = useState<string>('');
@@ -49,125 +50,194 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
   };
 
   return (
-    <div className="space-y-4 max-w-xl animate-fadeIn text-[#e5e2e3]">
-      {/* ── Autostart Card ───────────────────────────────────────────── */}
-      <div className="frosted-card p-5 space-y-3">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-[#242329] border border-[#2a282d] flex items-center justify-center text-[#859aea] shadow-sm">
-            <PlaySquare className="w-5 h-5" />
+    <div className="space-y-3.5 max-w-xl text-[#e5e2e3] font-mono text-xs">
+      {/* ── Page Header ────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between pb-1">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">Shortcuts & Daemons</h1>
+          <p className="text-xs text-[#929092] mt-0.5">
+            System startup commands • Global compositor keybindings
+          </p>
+        </div>
+      </div>
+
+      {/* ── Bento Grid: Row 1 (2 Square Tiles side-by-side) ───────────── */}
+      <div className="grid grid-cols-2 gap-3.5">
+        {/* Tile 1: Autostart Count */}
+        <div className="minimal-card p-4 flex flex-col justify-between h-36">
+          <div className="flex items-center justify-between">
+            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+              1
+            </div>
+            <span className="text-[10px] text-[#474648] font-mono">startup</span>
           </div>
+
           <div>
-            <div className="text-sm font-semibold text-[#e5e2e3]">Автозапуск (Autostart)</div>
-            <div className="text-xs text-[#929092]">{autostart.length} команд при старте</div>
+            <div className="flex items-baseline">
+              <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
+                {autostart.length}
+              </span>
+              <span className="text-xs text-[#929092] ml-1 font-medium">services</span>
+            </div>
+            <div className="text-[11px] text-[#929092] font-medium mt-0.5">
+              Startup Daemons
+            </div>
+            <div className="text-[10px] mt-1 text-[#a3d4a0]">
+              ● background spawn
+            </div>
           </div>
         </div>
 
-        {/* Add command input */}
-        <form onSubmit={handleAddCmd} className="flex items-center space-x-2 pt-1">
-          <div className="relative flex-1">
-            <Terminal className="w-3.5 h-3.5 text-[#929092] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={newCmd}
-              onChange={(e) => setNewCmd(e.target.value)}
-              placeholder="команда (например: swaync)"
-              className="w-full pl-8 pr-3 py-1.5 bg-[#131315] border border-[#2a282d] rounded-xl text-xs text-[#e5e2e3] font-mono placeholder-[#636265] focus:border-[#859aea] focus:outline-none transition-colors"
-            />
+        {/* Tile 2: Keybindings Count */}
+        <div className="minimal-card p-4 flex flex-col justify-between h-36">
+          <div className="flex items-start justify-between">
+            <div className="flex items-baseline">
+              <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
+                {Object.keys(keybindings).length}
+              </span>
+              <span className="text-xs text-[#929092] ml-1 font-medium">binds</span>
+            </div>
+            <span className="text-[10px] text-[#474648] font-mono">mod4</span>
           </div>
+
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium">Global Hotkeys</div>
+            <div className="text-sm font-semibold text-[#859aea] truncate">
+              driftwm Grabbers
+            </div>
+            <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
+              ● input dispatch online
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bento Grid: Row 2 (Wide Card - Autostart List) ───────────── */}
+      <div className="minimal-card p-4 space-y-3.5">
+        <div className="flex items-center justify-between border-b border-[#262529] pb-2.5">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+              2
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[#e5e2e3]">{t('shortcutsAutostartTitle')}</div>
+              <div className="text-[10px] text-[#929092]">Executed on driftwm initialization</div>
+            </div>
+          </div>
+          <span className="text-[10px] text-[#474648] font-mono">
+            {autostart.length} {t('shortcutsStartupCommands')}
+          </span>
+        </div>
+
+        {/* Add command form */}
+        <form onSubmit={handleAddCmd} className="flex items-center space-x-2">
+          <span className="text-[#474648] font-bold">$</span>
+          <input
+            type="text"
+            value={newCmd}
+            onChange={(e) => setNewCmd(e.target.value)}
+            placeholder={t('shortcutsCmdPlaceholder')}
+            className="flex-1 px-3 py-1.5 bg-[#131315] border border-[#262529] rounded-xl text-xs text-[#e5e2e3] font-mono placeholder-[#474648] focus:border-[#859aea] focus:outline-none transition-colors"
+          />
           <button
             type="submit"
-            className="px-3.5 py-1.5 rounded-xl bg-[#859aea] hover:bg-[#a4b5f5] text-xs font-semibold text-[#131315] transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] text-xs font-semibold text-[#859aea] transition-colors cursor-pointer"
           >
-            +
+            [+]
           </button>
         </form>
 
-        {/* List */}
-        <div className="max-h-44 overflow-y-auto divide-y divide-[#2a282d] pt-1">
+        {/* Commands List */}
+        <div className="max-h-48 overflow-y-auto divide-y divide-[#262529] pr-1">
           {autostart.map((cmd, idx) => (
             <div
               key={`${cmd}-${idx}`}
-              className="py-2 flex items-center justify-between text-xs group hover:bg-[#252429] px-2 rounded-lg transition-colors"
+              className="py-2.5 flex items-center justify-between text-xs group hover:bg-[#201f21]/40 px-2 rounded-lg transition-colors"
             >
-              <span className="font-mono text-[#e5e2e3] truncate pr-2">{cmd}</span>
+              <div className="flex items-center space-x-2.5 truncate pr-2">
+                <span className="text-[#474648] text-[10px] font-mono">{idx + 1}.</span>
+                <span className="font-mono text-[#e5e2e3] truncate">{cmd}</span>
+              </div>
               <button
                 type="button"
                 onClick={() => handleDeleteCmd(idx)}
-                className="text-[#929092] hover:text-[#ffb4ab] p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                title={t('shortcutsDelete')}
+                className="w-6 h-6 rounded-lg bg-[#131315] hover:bg-[#ffb4ab]/20 hover:text-[#ffb4ab] border border-[#262529] text-[#474648] flex items-center justify-center text-xs transition-colors cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                x
               </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Keybindings Card ─────────────────────────────────────────── */}
-      <div className="frosted-card p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-[#242329] border border-[#2a282d] flex items-center justify-center text-[#859aea] shadow-sm">
-              <Keyboard className="w-5 h-5" />
+      {/* ── Bento Grid: Row 3 (Wide Card - Keybindings) ───────────────── */}
+      <div className="minimal-card p-4 space-y-3.5">
+        <div className="flex items-center justify-between border-b border-[#262529] pb-2.5">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+              3
             </div>
             <div>
-              <div className="text-sm font-semibold text-[#e5e2e3]">Горячие клавиши</div>
-              <div className="text-xs text-[#929092]">{Object.keys(keybindings).length} комбинаций</div>
+              <div className="text-xs font-semibold text-[#e5e2e3]">{t('shortcutsKeybindingsTitle')}</div>
+              <div className="text-[10px] text-[#929092]">Custom compositor action mappings</div>
             </div>
           </div>
 
           <button
             type="button"
             onClick={() => setIsAddKeyOpen(!isAddKeyOpen)}
-            className="text-xs text-[#859aea] hover:text-[#a4b5f5] font-medium cursor-pointer"
+            className="px-2.5 py-1 rounded-lg bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] text-[10px] text-[#859aea] transition-colors cursor-pointer"
           >
-            {isAddKeyOpen ? 'Отмена' : '+ Добавить'}
+            {isAddKeyOpen ? `[ ${t('shortcutsCancel')} ]` : `[ + bind ]`}
           </button>
         </div>
 
         {isAddKeyOpen && (
-          <form onSubmit={handleAddKey} className="p-3 rounded-xl bg-[#161519] border border-[#2a282d] space-y-2 text-xs">
+          <form onSubmit={handleAddKey} className="p-3 rounded-xl bg-[#161518] border border-[#262529] space-y-2 text-xs">
             <input
               type="text"
               value={comboInput}
               onChange={(e) => setComboInput(e.target.value)}
-              placeholder="комбинация (например: mod+comma)"
-              className="w-full px-3 py-1.5 bg-[#131315] border border-[#2a282d] rounded-lg text-[#e5e2e3] font-mono focus:border-[#859aea] focus:outline-none transition-colors"
+              placeholder={t('shortcutsComboPlaceholder')}
+              className="w-full px-3 py-1.5 bg-[#131315] border border-[#262529] rounded-xl text-[#e5e2e3] font-mono focus:border-[#859aea] focus:outline-none transition-colors"
             />
             <input
               type="text"
               value={actionInput}
               onChange={(e) => setActionInput(e.target.value)}
-              placeholder="действие (например: exec kitty)"
-              className="w-full px-3 py-1.5 bg-[#131315] border border-[#2a282d] rounded-lg text-[#e5e2e3] font-mono focus:border-[#859aea] focus:outline-none transition-colors"
+              placeholder={t('shortcutsActionPlaceholder')}
+              className="w-full px-3 py-1.5 bg-[#131315] border border-[#262529] rounded-xl text-[#e5e2e3] font-mono focus:border-[#859aea] focus:outline-none transition-colors"
             />
             <button
               type="submit"
-              className="w-full py-2 rounded-lg bg-[#859aea] text-[#131315] font-semibold text-xs cursor-pointer shadow-sm hover:bg-[#a4b5f5] transition-colors"
+              className="w-full py-1.5 rounded-xl bg-[#859aea] text-[#131315] font-semibold text-xs cursor-pointer hover:bg-[#a4b5f5] transition-colors"
             >
-              Сохранить бинд
+              {t('shortcutsSaveBind')}
             </button>
           </form>
         )}
 
-        {/* List */}
-        <div className="max-h-56 overflow-y-auto divide-y divide-[#2a282d] pt-1">
-          {Object.entries(keybindings).map(([key, action]) => (
+        {/* Hotkeys list */}
+        <div className="max-h-56 overflow-y-auto divide-y divide-[#262529] pr-1">
+          {Object.entries(keybindings).map(([combo, action]) => (
             <div
-              key={key}
-              className="py-2 flex items-center justify-between text-xs group hover:bg-[#252429] px-2 rounded-lg transition-colors"
+              key={combo}
+              className="py-2.5 flex items-center justify-between text-xs group hover:bg-[#201f21]/40 px-2 rounded-lg transition-colors"
             >
-              <div className="flex items-center space-x-2 min-w-0 pr-2">
-                <kbd className="px-2 py-0.5 rounded bg-[#201f24] border border-[#2a282d] font-mono text-[11px] text-[#e5e2e3] shrink-0">
-                  {key}
-                </kbd>
-                <span className="font-mono text-[#929092] truncate">{action}</span>
+              <div className="flex items-center space-x-2.5 truncate pr-2">
+                <span className="px-2 py-0.5 rounded-lg bg-[#201f21] border border-[#262529] text-[#859aea] font-mono text-[11px] font-semibold shrink-0">
+                  {combo}
+                </span>
+                <span className="font-mono text-[#e5e2e3] truncate">{action}</span>
               </div>
               <button
                 type="button"
-                onClick={() => handleDeleteKey(key)}
-                className="text-[#929092] hover:text-[#ffb4ab] p-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer"
+                onClick={() => handleDeleteKey(combo)}
+                title={t('shortcutsDelete')}
+                className="w-6 h-6 rounded-lg bg-[#131315] hover:bg-[#ffb4ab]/20 hover:text-[#ffb4ab] border border-[#262529] text-[#474648] flex items-center justify-center text-xs transition-colors cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                x
               </button>
             </div>
           ))}

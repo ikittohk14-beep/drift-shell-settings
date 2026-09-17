@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, ExternalLink, Sliders } from 'lucide-react';
 import Toggle from '../Toggle';
+import { useI18n } from '../../i18n';
 import type { AudioStatus } from '../../../../preload/types';
 
 export const AudioView: React.FC = () => {
+  const { t } = useI18n();
   const [status, setStatus] = useState<AudioStatus>({
     volume: 50,
     isMuted: false,
@@ -58,29 +59,128 @@ export const AudioView: React.FC = () => {
     }
   };
 
+  // Helper to render volume dot matrix based on percentage
+  const renderChannelDots = (count: number, activeColor: string) => {
+    const totalDots = count;
+    const activeDots = Math.round((status.volume / 100) * totalDots);
+    return (
+      <div className="grid grid-cols-4 gap-1 w-fit mx-auto text-[8px]">
+        {Array.from({ length: totalDots }).map((_, i) => {
+          const isActive = !status.isMuted && i < activeDots;
+          return (
+            <span
+              key={i}
+              className={isActive ? activeColor : 'text-[#474648]'}
+            >
+              {isActive ? '●' : '·'}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-4 max-w-xl animate-fadeIn text-[#e5e2e3]">
-      {/* ── Volume Slider Card ────────────────────────────────────────── */}
-      <div className="frosted-card p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-[#242329] border border-[#2a282d] flex items-center justify-center text-[#859aea] shadow-sm">
-              {status.isMuted ? <VolumeX className="w-5 h-5 text-[#ffb4ab]" /> : <Volume2 className="w-5 h-5 text-[#859aea]" />}
+    <div className="space-y-3.5 max-w-xl text-[#e5e2e3] font-mono text-xs">
+      {/* ── Page Header ────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between pb-1">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">{t('audioTitle')}</h1>
+          <p className="text-xs text-[#929092] mt-0.5">
+            PipeWire • WirePlumber • {status.isMuted ? t('audioMuted') : `${status.volume}% output`}
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={fetchStatus}
+            className="w-8 h-8 rounded-xl bg-[#1a191d] border border-[#262529] hover:border-[#36353b] text-[#859aea] flex items-center justify-center text-xs transition-colors cursor-pointer"
+            title="Refresh Audio"
+          >
+            ::
+          </button>
+          <Toggle checked={!status.isMuted} onChange={handleToggleMute} />
+        </div>
+      </div>
+
+      {/* ── Bento Grid: Row 1 (2 Square Tiles side-by-side) ───────────── */}
+      <div className="grid grid-cols-2 gap-3.5">
+        {/* Tile 1: Master State */}
+        <div className="minimal-card p-4 flex flex-col justify-between h-36">
+          <div className="flex items-center justify-between">
+            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+              1
             </div>
-            <div>
-              <div className="text-sm font-semibold text-[#e5e2e3]">Громкость звука</div>
-              <div className="text-xs text-[#929092]">
-                {status.isMuted ? 'Звук отключен (Mute)' : `${status.volume}%`}
-              </div>
-            </div>
+            <span className="text-[10px] text-[#474648] font-mono">hw:pipewire</span>
           </div>
 
-          <Toggle checked={status.isMuted} onChange={handleToggleMute} />
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium">Master Sink</div>
+            <div className="text-xl font-bold text-[#e5e2e3] tracking-tight">
+              {status.isMuted ? 'Muted' : 'Online'}
+            </div>
+            <div className={`text-[10px] mt-0.5 ${!status.isMuted ? 'text-[#a3d4a0]' : 'text-[#ffb4ab]'}`}>
+              {!status.isMuted ? '● active stream' : '○ output muted'}
+            </div>
+          </div>
         </div>
 
-        {/* Slider */}
-        <div className="flex items-center space-x-3 pt-2">
-          <VolumeX className="w-4 h-4 text-[#929092]" />
+        {/* Tile 2: Volume Metric */}
+        <div className="minimal-card p-4 flex flex-col justify-between h-36">
+          <div className="flex items-start justify-between">
+            <div className="flex items-baseline">
+              <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
+                {status.isMuted ? 0 : status.volume}
+              </span>
+              <span className="text-xs text-[#929092] ml-1 font-medium">%</span>
+            </div>
+            <span className="text-[10px] text-[#474648] font-mono">gain</span>
+          </div>
+
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium">Output Volume</div>
+            <div className="text-sm font-semibold text-[#859aea] truncate">
+              {status.isMuted
+                ? t('audioMuted')
+                : status.volume > 80
+                ? 'High Gain'
+                : status.volume > 30
+                ? 'Nominal Gain'
+                : 'Low Gain'}
+            </div>
+            <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
+              0 dB ~ +6 dB limit
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bento Grid: Row 2 (Wide Card - Dot Matrix & Range Control) ─ */}
+      <div className="minimal-card p-4 space-y-3.5">
+        {/* Dot Matrix Channels */}
+        <div className="grid grid-cols-3 gap-2 text-center border-b border-[#262529] pb-3">
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">Channel L</div>
+            {renderChannelDots(8, 'text-[#859aea]')}
+          </div>
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">Channel R</div>
+            {renderChannelDots(8, 'text-[#a3d4a0]')}
+          </div>
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">Peak Meter</div>
+            {renderChannelDots(8, 'text-[#e8cf8d]')}
+          </div>
+        </div>
+
+        {/* Volume Slider & Preset Buttons */}
+        <div className="space-y-3 pt-1">
+          <div className="flex justify-between text-[11px] text-[#929092]">
+            <span>0%</span>
+            <span className="text-[#e5e2e3] font-bold">{status.volume}%</span>
+            <span>100%</span>
+          </div>
+
           <input
             type="range"
             min="0"
@@ -88,25 +188,48 @@ export const AudioView: React.FC = () => {
             step="1"
             value={status.volume}
             onChange={(e) => handleVolumeChange(parseInt(e.target.value, 10))}
-            className="flex-1 cursor-pointer"
+            className="w-full cursor-pointer"
           />
-          <Volume2 className="w-4 h-4 text-[#e5e2e3]" />
+
+          {/* Preset Buttons */}
+          <div className="flex items-center justify-between pt-1 gap-2">
+            {[0, 25, 50, 75, 100].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => handleVolumeChange(preset)}
+                className={`flex-1 py-1 rounded-lg border text-[10px] transition-colors cursor-pointer ${
+                  status.volume === preset && !status.isMuted
+                    ? 'bg-[#201f21] border-[#859aea] text-[#859aea]'
+                    : 'bg-[#131315] border-[#262529] text-[#929092] hover:text-[#e5e2e3] hover:border-[#36353b]'
+                }`}
+              >
+                {preset}%
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ── Audio Mixer Card ───────────────────────────────────────────── */}
-      <div className="frosted-card overflow-hidden">
-        <div className="divide-y divide-[#2a282d]">
+      {/* ── Bento Grid: Row 3 (Wide Card - PipeWire & Pavucontrol Launcher) ── */}
+      <div className="minimal-card p-4 space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+              2
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[#e5e2e3]">{t('audioPavucontrol')}</div>
+              <div className="text-[10px] text-[#929092]">PulseAudio / ALSA Routing • Dynamic Nodes</div>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={handleOpenSettings}
-            className="w-full px-5 py-4 flex items-center justify-between text-xs text-[#929092] hover:text-[#e5e2e3] hover:bg-[#252429] transition-colors cursor-pointer"
+            className="px-2.5 py-1 rounded-lg bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] text-[10px] text-[#859aea] transition-colors cursor-pointer"
           >
-            <div className="flex items-center space-x-3">
-              <Sliders className="w-4 h-4 text-[#859aea]" />
-              <span className="font-medium">Расширенный микшер (pavucontrol)</span>
-            </div>
-            <ExternalLink className="w-4 h-4 text-[#929092]" />
+            pavucontrol &gt;
           </button>
         </div>
       </div>

@@ -963,6 +963,7 @@ function createWindow(): BrowserWindow {
     minWidth: 800,
     minHeight: 520,
     frame: false,
+    titleBarStyle: 'hidden',
     transparent: true,
     backgroundColor: '#00000000',
     hasShadow: false,
@@ -973,6 +974,24 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       webSecurity: false,
     },
+  });
+
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown') {
+      const key = input.key.toLowerCase();
+      const code = input.code;
+      const isCtrlOrMeta = input.control || input.meta;
+      const isAlt = input.alt;
+
+      if (
+        input.key === 'Escape' ||
+        (isCtrlOrMeta && (key === 'w' || key === 'ц' || code === 'KeyW' || key === 'q' || key === 'й' || code === 'KeyQ')) ||
+        (isAlt && input.key === 'F4')
+      ) {
+        event.preventDefault();
+        win.close();
+      }
+    }
   });
 
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;

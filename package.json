@@ -1,7 +1,7 @@
 {
   "name": "drift-shell-settings",
-  "version": "1.0.0",
-  "description": "Drift Shell Settings — Control Center and Configuration Suite for driftwm (Wayland)",
+  "version": "1.1.0",
+  "description": "Drift Shell Settings — GUI config editor for driftwm (Wayland). RU / EN.",
   "type": "module",
   "main": "dist-electron/main/index.js",
   "scripts": {

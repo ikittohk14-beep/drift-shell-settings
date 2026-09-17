@@ -1,23 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Bluetooth,
-  Check,
-  ExternalLink,
-  Battery,
-  RefreshCw,
-  Smartphone,
-  Headphones,
-  HardDrive,
-  Radio,
-  Trash2,
-  Keyboard,
-  Mouse,
-  Laptop,
-} from 'lucide-react';
 import Toggle from '../Toggle';
+import { useI18n } from '../../i18n';
 import type { BluetoothStatus, BluetoothDeviceItem } from '../../../../preload/types';
 
 export const BluetoothView: React.FC = () => {
+  const { t } = useI18n();
   const [status, setStatus] = useState<BluetoothStatus>({
     enabled: true,
     connected: false,
@@ -55,7 +42,7 @@ export const BluetoothView: React.FC = () => {
   const handleScan = async () => {
     try {
       setIsScanning(true);
-      setScanMessage('Поиск устройств поблизости...');
+      setScanMessage(t('btScanningNearbyMsg'));
       if (window.driftAPI?.scanBluetoothDevices) {
         const list = await window.driftAPI.scanBluetoothDevices();
         setDevices(list);
@@ -158,7 +145,7 @@ export const BluetoothView: React.FC = () => {
     }
   };
 
-  const getDeviceIcon = (dev: BluetoothDeviceItem) => {
+  const getDeviceBadge = (dev: BluetoothDeviceItem) => {
     const iconType = (dev.icon || '').toLowerCase();
     const name = dev.name.toLowerCase();
 
@@ -173,13 +160,13 @@ export const BluetoothView: React.FC = () => {
       name.includes('airpods') ||
       name.includes('wh-')
     ) {
-      return <Headphones className="w-4 h-4 text-[#859aea] shrink-0" />;
+      return { tag: '[audio]', color: 'text-[#859aea]' };
     }
     if (iconType.includes('keyboard') || name.includes('keyboard') || name.includes('клавиатура')) {
-      return <Keyboard className="w-4 h-4 text-[#a3d4a0] shrink-0" />;
+      return { tag: '[kbd]', color: 'text-[#a3d4a0]' };
     }
     if (iconType.includes('mouse') || name.includes('mouse') || name.includes('мышь')) {
-      return <Mouse className="w-4 h-4 text-[#e8cf8d] shrink-0" />;
+      return { tag: '[mouse]', color: 'text-[#e8cf8d]' };
     }
     if (
       iconType.includes('phone') ||
@@ -188,101 +175,194 @@ export const BluetoothView: React.FC = () => {
       name.includes('pixel') ||
       name.includes('galaxy')
     ) {
-      return <Smartphone className="w-4 h-4 text-[#88c0d0] shrink-0" />;
+      return { tag: '[phone]', color: 'text-[#88c0d0]' };
     }
     if (iconType.includes('computer') || iconType.includes('laptop')) {
-      return <Laptop className="w-4 h-4 text-[#c0c6dc] shrink-0" />;
+      return { tag: '[pc]', color: 'text-[#c0c6dc]' };
     }
-    return <HardDrive className="w-4 h-4 text-[#929092] shrink-0" />;
+    return { tag: '[dev]', color: 'text-[#929092]' };
   };
 
   const pairedDevices = devices.filter((d) => d.paired);
   const availableDevices = devices.filter((d) => !d.paired);
 
   return (
-    <div className="space-y-4 max-w-xl animate-fadeIn text-[#e5e2e3]">
-      {/* ── Main Bluetooth Switch Card ─────────────────────────────────── */}
-      <div className="frosted-card p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-[#242329] border border-[#2a282d] flex items-center justify-center text-[#859aea] shadow-sm">
-            <Bluetooth className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-[#e5e2e3]">Bluetooth</div>
-            <div className="text-xs text-[#929092]">
-              {status.enabled
-                ? status.connected
-                  ? `Подключено: ${status.deviceName}`
-                  : 'Включен, готов к сопряжению'
-                : 'Выключен'}
-            </div>
-          </div>
+    <div className="space-y-3.5 max-w-xl text-[#e5e2e3] font-mono text-xs">
+      {/* ── Page Header ────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between pb-1">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">{t('btTitle')}</h1>
+          <p className="text-xs text-[#929092] mt-0.5">
+            {status.enabled
+              ? status.connected
+                ? `${t('btConnectedTo')}${status.deviceName}`
+                : isScanning
+                ? t('btScanningNearbyMsg')
+                : t('btReadyToPair')
+              : t('btDisabled')}
+          </p>
         </div>
-
-        <Toggle checked={status.enabled} onChange={handleToggle} />
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={handleScan}
+            disabled={isScanning || !status.enabled}
+            className="w-8 h-8 rounded-xl bg-[#1a191d] border border-[#262529] hover:border-[#36353b] text-[#859aea] flex items-center justify-center text-xs transition-colors cursor-pointer disabled:opacity-40"
+            title={t('btScanRadio')}
+          >
+            {isScanning ? '..' : '::'}
+          </button>
+          <Toggle checked={status.enabled} onChange={handleToggle} />
+        </div>
       </div>
 
-      {/* ── Connected Device Banner ────────────────────────────────────── */}
-      {status.enabled && status.connected && status.deviceName && (
-        <div className="frosted-card p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#859aea]/15 border border-[#859aea]/30 flex items-center justify-center text-[#859aea] shrink-0">
-              <Check className="w-4 h-4" />
-            </div>
-            <div className="truncate">
-              <div className="text-sm font-medium text-[#e5e2e3] truncate">{status.deviceName}</div>
-              <div className="text-xs text-[#a3d4a0]">Активное подключение</div>
-            </div>
-          </div>
-
-          {status.batteryPercent != null && (
-            <div className="flex items-center space-x-1.5 text-xs text-[#e5e2e3] font-mono px-2.5 py-1 rounded-md bg-[#242329] border border-[#2a282d]">
-              <Battery className="w-3.5 h-3.5 text-[#a3d4a0]" />
-              <span>{status.batteryPercent}%</span>
-            </div>
-          )}
+      {/* ── Scanning Banner ───────────────────────────────────────────── */}
+      {scanMessage && (
+        <div className="px-3.5 py-2.5 rounded-2xl bg-[#859aea]/10 border border-[#859aea]/30 flex items-center space-x-2 text-[11px] text-[#859aea]">
+          <span className="font-bold animate-pulse">[i]</span>
+          <span className="flex-1">{scanMessage}</span>
         </div>
       )}
 
-      {/* ── Paired & Known Devices Card ────────────────────────────────── */}
+      {/* ── Bento Grid: Row 1 (2 Square Tiles side-by-side) ───────────── */}
+      <div className="grid grid-cols-2 gap-3.5">
+        {/* Tile 1: Controller & State */}
+        <div className="minimal-card p-4 flex flex-col justify-between h-36">
+          <div className="flex items-center justify-between">
+            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+              1
+            </div>
+            <span className="text-[10px] text-[#474648] font-mono">hci0</span>
+          </div>
+
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium">Adapter State</div>
+            <div className="text-xl font-bold text-[#e5e2e3] tracking-tight">
+              {status.enabled ? (status.connected ? 'Connected' : 'Standby') : 'Disabled'}
+            </div>
+            <div className={`text-[10px] mt-0.5 ${status.enabled ? 'text-[#a3d4a0]' : 'text-[#474648]'}`}>
+              {status.enabled ? '● bluez radio on' : '○ controller down'}
+            </div>
+          </div>
+        </div>
+
+        {/* Tile 2: Connected Device & Battery Metric */}
+        <div className="minimal-card p-4 flex flex-col justify-between h-36">
+          <div className="flex items-start justify-between">
+            <div className="flex items-baseline">
+              <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
+                {status.batteryPercent != null ? status.batteryPercent : (status.connected ? 'ON' : '0')}
+              </span>
+              {status.batteryPercent != null && (
+                <span className="text-xs text-[#929092] ml-1 font-medium">%</span>
+              )}
+            </div>
+            <span className="text-[10px] text-[#474648] font-mono">battery</span>
+          </div>
+
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium">{t('btActiveConnection')}</div>
+            <div className="text-sm font-semibold text-[#859aea] truncate">
+              {status.connected && status.deviceName ? status.deviceName : t('btReadyToPair')}
+            </div>
+            <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
+              A2DP • AVRCP • BLE
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bento Grid: Row 2 (Wide Card - Bluetooth Protocols & Blueman) ─ */}
+      <div className="minimal-card p-4 space-y-3.5">
+        <div className="grid grid-cols-3 gap-2 text-center border-b border-[#262529] pb-3">
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">LE Audio</div>
+            <div className="grid grid-cols-4 gap-1 w-fit mx-auto text-[8px] text-[#859aea]">
+              <span>●</span><span>●</span><span>●</span><span>●</span>
+              <span>●</span><span>●</span><span className="text-[#474648]">·</span><span className="text-[#474648]">·</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">A2DP Stereo</div>
+            <div className="grid grid-cols-4 gap-1 w-fit mx-auto text-[8px] text-[#a3d4a0]">
+              <span>●</span><span>●</span><span>●</span><span>●</span>
+              <span>●</span><span>●</span><span>●</span><span className="text-[#474648]">·</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">HID Input</div>
+            <div className="grid grid-cols-4 gap-1 w-fit mx-auto text-[8px] text-[#c0c6dc]">
+              <span>●</span><span>●</span><span>●</span><span className="text-[#474648]">·</span>
+              <span className="text-[#474648]">·</span><span className="text-[#474648]">·</span><span className="text-[#474648]">·</span><span className="text-[#474648]">·</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-0.5">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+              2
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[#e5e2e3]">Bluetooth Manager</div>
+              <div className="text-[10px] text-[#929092]">{t('btBluemanManager')}</div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleOpenSettings}
+            className="px-2.5 py-1 rounded-lg bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] text-[10px] text-[#859aea] transition-colors cursor-pointer"
+          >
+            blueman-manager &gt;
+          </button>
+        </div>
+      </div>
+
+      {/* ── Bento Grid: Row 3 (Wide Card - Paired Devices) ───────────── */}
       {status.enabled && (
-        <div className="frosted-card overflow-hidden">
-          <div className="px-5 py-3 flex items-center justify-between border-b border-[#2a282d]">
-            <span className="text-[10px] font-semibold text-[#636265] uppercase tracking-wider">
-              Сохраненные устройства {pairedDevices.length > 0 ? `(${pairedDevices.length})` : ''}
-            </span>
+        <div className="minimal-card overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#262529] flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+                3
+              </div>
+              <span className="text-xs font-semibold text-[#e5e2e3]">{t('btSavedDevices')}</span>
+              <span className="text-[10px] text-[#929092]">({pairedDevices.length})</span>
+            </div>
 
             <button
               type="button"
               onClick={handleScan}
               disabled={isScanning}
-              className="flex items-center space-x-1.5 text-xs text-[#929092] hover:text-[#e5e2e3] transition-colors cursor-pointer"
-              title="Поиск устройств"
+              className="px-2.5 py-1 rounded-lg bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] text-[10px] text-[#859aea] transition-colors cursor-pointer"
             >
-              <Radio className={`w-3.5 h-3.5 text-[#859aea] ${isScanning ? 'animate-pulse' : ''}`} />
-              <span>{isScanning ? 'Поиск...' : 'Сканировать эфир'}</span>
+              {isScanning ? '[ scanning.. ]' : '[ scan ]'}
             </button>
           </div>
 
-          <div className="divide-y divide-[#2a282d]">
+          <div className="divide-y divide-[#262529]">
             {pairedDevices.length === 0 ? (
-              <div className="px-5 py-5 text-xs text-[#929092] text-center">
-                Нет сохраненных устройств
+              <div className="px-4 py-6 text-center text-[11px] text-[#929092]">
+                {t('btNoSavedDevices')}
               </div>
             ) : (
               pairedDevices.map((dev) => {
                 const isBusy = busyMac === dev.mac;
+                const badge = getDeviceBadge(dev);
 
                 return (
                   <div
                     key={dev.mac}
-                    className="px-5 py-3.5 flex items-center justify-between hover:bg-[#252429] transition-colors"
+                    className="px-4 py-3 flex items-center justify-between hover:bg-[#201f21]/40 transition-colors"
                   >
                     <div className="flex items-center space-x-3 min-w-0">
-                      {getDeviceIcon(dev)}
-                      <div className="truncate">
+                      <span className={`text-[10px] font-bold ${badge.color} shrink-0`}>
+                        {badge.tag}
+                      </span>
+                      <div className="truncate min-w-0">
                         <div className="flex items-center space-x-2">
-                          <span className="text-xs font-medium text-[#e5e2e3] truncate">
+                          <span className="text-xs font-semibold text-[#e5e2e3] truncate">
                             {dev.name}
                           </span>
                           {dev.batteryPercent != null && (
@@ -291,43 +371,34 @@ export const BluetoothView: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-[#929092] font-mono">
+                        <div className="text-[10px] text-[#474648] font-mono">
                           {dev.mac}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 shrink-0">
+                    <div className="flex items-center space-x-2 shrink-0 ml-2">
                       <button
                         type="button"
                         onClick={() => handleConnectToggle(dev)}
                         disabled={isBusy}
-                        className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center space-x-1.5 ${
+                        className={`px-2.5 py-1 text-xs rounded-lg transition-colors cursor-pointer font-medium ${
                           dev.connected
-                            ? 'bg-[#28272c] hover:bg-[#ffb4ab]/20 hover:text-[#ffb4ab] text-[#929092] border border-[#38363d]'
+                            ? 'bg-[#131315] hover:bg-[#ffb4ab]/20 hover:text-[#ffb4ab] text-[#929092] border border-[#262529]'
                             : 'bg-[#859aea] hover:bg-[#a4b5f5] text-[#131315]'
                         }`}
                       >
-                        {isBusy ? (
-                          <>
-                            <RefreshCw className="w-3 h-3 animate-spin" />
-                            <span>...</span>
-                          </>
-                        ) : dev.connected ? (
-                          <span>Отключить</span>
-                        ) : (
-                          <span>Подключить</span>
-                        )}
+                        {isBusy ? '[ .. ]' : dev.connected ? t('btDisconnect') : t('btConnect')}
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleUnpair(dev.mac)}
                         disabled={isBusy}
-                        title="Удалить устройство"
-                        className="p-1.5 rounded-lg bg-[#201f24] hover:bg-[#ffb4ab]/20 hover:text-[#ffb4ab] text-[#929092] border border-[#2a282d] transition-colors cursor-pointer"
+                        title={t('btRemoveDevice')}
+                        className="w-7 h-7 rounded-lg bg-[#131315] hover:bg-[#ffb4ab]/20 hover:text-[#ffb4ab] border border-[#262529] text-[#474648] flex items-center justify-center text-xs transition-colors cursor-pointer"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        x
                       </button>
                     </div>
                   </div>
@@ -338,79 +409,54 @@ export const BluetoothView: React.FC = () => {
         </div>
       )}
 
-      {/* ── Available / Discovered Devices ─────────────────────────────── */}
-      {status.enabled && (
-        <div className="frosted-card overflow-hidden">
-          <div className="px-5 py-3 flex items-center justify-between border-b border-[#2a282d]">
-            <span className="text-[10px] font-semibold text-[#636265] uppercase tracking-wider">
-              Доступные устройства рядом {availableDevices.length > 0 ? `(${availableDevices.length})` : ''}
-            </span>
-
-            {isScanning && (
-              <span className="flex items-center space-x-1.5 text-[11px] text-[#859aea] animate-pulse">
-                <RefreshCw className="w-3 h-3 animate-spin" />
-                <span>{scanMessage || 'Поиск...'}</span>
-              </span>
-            )}
+      {/* ── Bento Grid: Row 4 (Wide Card - Available Nearby Devices) ──── */}
+      {status.enabled && availableDevices.length > 0 && (
+        <div className="minimal-card overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#262529] flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
+                4
+              </div>
+              <span className="text-xs font-semibold text-[#e5e2e3]">{t('btAvailableDevicesNearby')}</span>
+              <span className="text-[10px] text-[#929092]">({availableDevices.length})</span>
+            </div>
           </div>
 
-          <div className="divide-y divide-[#2a282d]">
-            {availableDevices.length === 0 ? (
-              <div className="px-5 py-5 text-xs text-[#929092] text-center">
-                {isScanning
-                  ? 'Сканирование радиоэфира...'
-                  : 'Нажмите «Сканировать эфир», чтобы найти новые устройства'}
-              </div>
-            ) : (
-              availableDevices.map((dev) => {
-                const isBusy = busyMac === dev.mac;
+          <div className="divide-y divide-[#262529]">
+            {availableDevices.map((dev) => {
+              const isBusy = busyMac === dev.mac;
+              const badge = getDeviceBadge(dev);
 
-                return (
-                  <div
-                    key={dev.mac}
-                    className="px-5 py-3.5 flex items-center justify-between hover:bg-[#252429] transition-colors"
-                  >
-                    <div className="flex items-center space-x-3 min-w-0">
-                      {getDeviceIcon(dev)}
-                      <div className="truncate">
-                        <div className="text-xs font-medium text-[#e5e2e3] truncate">
-                          {dev.name}
-                        </div>
-                        <div className="text-[11px] text-[#929092] font-mono">
-                          {dev.mac}
-                        </div>
+              return (
+                <div
+                  key={dev.mac}
+                  className="px-4 py-3 flex items-center justify-between hover:bg-[#201f21]/40 transition-colors"
+                >
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <span className={`text-[10px] font-bold ${badge.color} shrink-0`}>
+                      {badge.tag}
+                    </span>
+                    <div className="truncate min-w-0">
+                      <div className="text-xs font-semibold text-[#e5e2e3] truncate">
+                        {dev.name}
+                      </div>
+                      <div className="text-[10px] text-[#474648] font-mono">
+                        {dev.mac}
                       </div>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handlePair(dev.mac)}
-                      disabled={isBusy}
-                      className="px-3 py-1 text-xs font-medium rounded-lg bg-[#859aea] hover:bg-[#a4b5f5] text-[#131315] transition-colors cursor-pointer flex items-center space-x-1.5 shrink-0"
-                    >
-                      {isBusy ? (
-                        <>
-                          <RefreshCw className="w-3 h-3 animate-spin" />
-                          <span>Сопряжение...</span>
-                        </>
-                      ) : (
-                        <span>Сопряжение</span>
-                      )}
-                    </button>
                   </div>
-                );
-              })
-            )}
 
-            {/* Blueman Manager Shortcut */}
-            <button
-              type="button"
-              onClick={handleOpenSettings}
-              className="w-full px-5 py-3 flex items-center justify-between text-xs text-[#929092] hover:text-[#e5e2e3] hover:bg-[#252429] transition-colors cursor-pointer"
-            >
-              <span className="font-medium">Расширенный менеджер (blueman-manager)</span>
-              <ExternalLink className="w-3.5 h-3.5 text-[#929092]" />
-            </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePair(dev.mac)}
+                    disabled={isBusy}
+                    className="px-2.5 py-1 text-xs rounded-lg bg-[#201f21] hover:bg-[#859aea] hover:text-[#131315] border border-[#262529] text-[#859aea] transition-colors cursor-pointer font-medium"
+                  >
+                    {isBusy ? '[ .. ]' : t('btPair')}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -419,4 +465,3 @@ export const BluetoothView: React.FC = () => {
 };
 
 export default BluetoothView;
-

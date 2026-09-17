@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RefreshCw, Check, AlertTriangle, X } from 'lucide-react';
+import { I18nProvider, useI18n, TranslationKey } from './i18n';
+import Titlebar from './components/Titlebar';
 import Sidebar, { TabType } from './components/Sidebar';
 import WifiView from './components/views/WifiView';
 import BluetoothView from './components/views/BluetoothView';
@@ -16,7 +17,9 @@ import type {
   BluetoothStatus,
 } from '../../preload/types';
 
-export const App: React.FC = () => {
+const SettingsAppInner: React.FC = () => {
+  const { t } = useI18n();
+
   const [config, setConfig] = useState<DriftConfig>({
     autostart: [],
     window_rules: [],
@@ -52,22 +55,22 @@ export const App: React.FC = () => {
     deviceName: null,
   });
 
-  const tabTitles: Record<TabType, string> = {
-    wifi: 'Wi-Fi',
-    bluetooth: 'Bluetooth',
-    personalization: 'Персонализация',
-    audio: 'Звук',
-    windows: 'Окна и блюр',
-    input: 'Клавиатура и мышь',
-    shortcuts: 'Автозапуск и клавиши',
-    system: 'Управление ПК',
+  const tabTitleKeys: Record<TabType, TranslationKey> = {
+    wifi: 'tabWifi',
+    bluetooth: 'tabBluetooth',
+    personalization: 'tabPersonalization',
+    audio: 'tabAudio',
+    windows: 'tabWindows',
+    input: 'tabInput',
+    shortcuts: 'tabShortcuts',
+    system: 'tabSystem',
   };
 
   // Listen for initial tab and CLI / widget tab switches
   useEffect(() => {
     if (window.driftAPI?.getInitialTab) {
       window.driftAPI.getInitialTab().then((tab) => {
-        if (tab && tab in tabTitles) {
+        if (tab && tab in tabTitleKeys) {
           setActiveTab(tab as TabType);
         }
       });
@@ -75,7 +78,7 @@ export const App: React.FC = () => {
 
     if (window.driftAPI?.onTabSwitch) {
       const unsub = window.driftAPI.onTabSwitch((tab) => {
-        if (tab && tab in tabTitles) {
+        if (tab && tab in tabTitleKeys) {
           setActiveTab(tab as TabType);
         }
       });
@@ -83,10 +86,19 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Close window with Escape
+  // Close window with Escape, Ctrl+W, Ctrl+Q, Alt+F4
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      const key = e.key.toLowerCase();
+      const code = e.code;
+      const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+
+      if (
+        e.key === 'Escape' ||
+        (isCtrlOrMeta && (key === 'w' || key === 'ц' || code === 'KeyW' || key === 'q' || key === 'й' || code === 'KeyQ')) ||
+        (e.altKey && e.key === 'F4')
+      ) {
+        e.preventDefault();
         window.driftAPI?.closeWindow();
       }
     };
@@ -94,21 +106,18 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Load config and initial hardware status on mount
+  // Load configuration and hardware status
   useEffect(() => {
     let isMounted = true;
+
     const fetchConfigAndStatus = async () => {
       try {
         if (window.driftAPI?.loadConfig) {
-          const loaded = await window.driftAPI.loadConfig();
+          const initialConfig = await window.driftAPI.loadConfig();
           if (isMounted) {
-            setConfig(loaded);
+            setConfig(initialConfig);
             setHasLoadedConfig(true);
           }
-        }
-        if (window.driftAPI?.checkConfig) {
-          const check = await window.driftAPI.checkConfig();
-          if (isMounted) setValidation(check);
         }
         if (window.driftAPI?.getWifiStatus) {
           const wf = await window.driftAPI.getWifiStatus();
@@ -145,7 +154,7 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // ── Debounced Auto-Apply on Any Config Change ─────────────────────────
+  // Debounced Auto-Apply on Any Config Change
   useEffect(() => {
     if (!hasLoadedConfig) return;
     if (isFirstUpdate.current) {
@@ -163,7 +172,7 @@ export const App: React.FC = () => {
         if (window.driftAPI?.saveConfig) {
           const res = await window.driftAPI.saveConfig(config);
           if (res.success) {
-            setValidation({ valid: true, output: 'Конфигурация сохранена OK' });
+            setValidation({ valid: true, output: t('configSavedOk') });
             if (window.driftAPI?.reloadDriftwm) {
               await window.driftAPI.reloadDriftwm();
             }
@@ -171,7 +180,7 @@ export const App: React.FC = () => {
             setValidation({
               valid: false,
               output: '',
-              error: res.error || 'Ошибка записи конфигурации',
+              error: res.error || t('configSaveError'),
             });
           }
         }
@@ -180,7 +189,7 @@ export const App: React.FC = () => {
         setValidation({
           valid: false,
           output: '',
-          error: err?.message || 'Ошибка автоприменения',
+          error: err?.message || t('autoApplyError'),
         });
       } finally {
         setIsSaving(false);
@@ -216,68 +225,27 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="w-screen h-screen flex bg-[#131315] text-[#e5e2e3] font-sans overflow-hidden border border-[#2a282d] rounded-2xl shadow-2xl select-none">
-      {/* ── Minimal Sidebar ──────────────────────────────────────────── */}
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        wifiStatus={wifiStatus}
-        bluetoothStatus={bluetoothStatus}
+    <div className="w-screen h-screen flex flex-col bg-[#131315] text-[#e5e2e3] font-mono overflow-hidden rounded-3xl border border-[#262529] select-none">
+      {/* ── Draggable Titlebar across full window width ────────────── */}
+      <Titlebar
+        title={t(tabTitleKeys[activeTab])}
+        validation={validation}
+        isValidating={isValidating}
+        isSaving={isSaving}
+        onValidate={handleValidate}
       />
 
-      {/* ── Main Content View (Solid, Minimal Header) ─────────────── */}
-      <main className="flex-1 overflow-y-auto p-7 min-w-0 flex flex-col bg-[#131315]">
-        {/* Minimal Integrated Header with Drag Area */}
-        <div className="flex items-center justify-between mb-5 app-drag shrink-0 pb-1">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-lg font-bold text-[#e5e2e3] tracking-tight">
-              {tabTitles[activeTab]}
-            </h1>
-            {/* Subtle Auto-Apply Indicator */}
-            {isSaving ? (
-              <span className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] text-[#929092] bg-[#242329] border border-[#2a282d] animate-pulse">
-                <RefreshCw className="w-2.5 h-2.5 animate-spin text-[#859aea]" />
-                <span>Применение...</span>
-              </span>
-            ) : validation && !validation.valid ? (
-              <span
-                className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] text-[#ffb4ab] bg-[#ffb4ab]/10 border border-[#ffb4ab]/25"
-                title={validation.error || validation.output}
-              >
-                <AlertTriangle className="w-2.5 h-2.5" />
-                <span>Ошибка</span>
-              </span>
-            ) : (
-              <span className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] text-[#a3d4a0] bg-[#a3d4a0]/10 border border-[#a3d4a0]/25">
-                <Check className="w-2.5 h-2.5 text-[#a3d4a0]" />
-                <span>Применено</span>
-              </span>
-            )}
-          </div>
+      {/* ── Main Workspace Body ───────────────────────────────────── */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          wifiStatus={wifiStatus}
+          bluetoothStatus={bluetoothStatus}
+        />
 
-          {/* Discreet Minimal Controls */}
-          <div className="flex items-center space-x-2 app-no-drag">
-            <button
-              type="button"
-              onClick={handleValidate}
-              disabled={isValidating}
-              title="Проверить конфиг"
-              className="w-7 h-7 rounded-full bg-[#201f24] hover:bg-[#2c2b31] border border-[#2a282d] text-[#929092] hover:text-[#e5e2e3] flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isValidating ? 'animate-spin text-[#e5e2e3]' : ''}`} />
-            </button>
-            <button
-              type="button"
-              onClick={() => window.driftAPI?.closeWindow()}
-              title="Закрыть (Esc)"
-              className="w-7 h-7 rounded-full bg-[#201f24] hover:bg-[#ffb4ab]/20 hover:border-[#ffb4ab]/40 hover:text-[#ffb4ab] border border-[#2a282d] text-[#929092] flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 min-h-0">
+        {/* ── Scrollable Content Views ────────────────────────────── */}
+        <main className="flex-1 overflow-y-auto p-5 min-w-0 flex flex-col bg-[#131315]">
           {activeTab === 'wifi' && <WifiView />}
 
           {activeTab === 'bluetooth' && <BluetoothView />}
@@ -335,9 +303,17 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'system' && <SystemView />}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <I18nProvider>
+      <SettingsAppInner />
+    </I18nProvider>
   );
 };
 
