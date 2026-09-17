@@ -166,6 +166,8 @@ export const translations = {
     windowsRulesHeader: 'Правила окон',
     windowsRulesShow: 'Развернуть правила',
     windowsRulesHide: 'Свернуть правила',
+    windowsExpand: 'Настройки',
+    windowsCollapse: 'Свернуть',
 
     // Input View
     inputKbdTitle: 'Клавиатура и раскладки',
@@ -178,9 +180,15 @@ export const translations = {
     inputTrackpadSpeed: 'Скорость трекпада:',
     inputTapToClick: 'Клик касанием по трекпаду',
     inputSnapTitle: 'Привязка окон',
-    inputSnapDesc: 'Магнитное прилипание к краям',
-    inputSameEdge: 'Привязка по одной границе',
-    inputResetZoom: 'Сброс зума при новом окне',
+    inputSnapDesc: 'Магнитное прилипание к краям на холсте',
+    inputSnapEnabled: 'Магнитная привязка окон',
+    inputSnapEnabledDesc: 'Примагничивание окон друг к другу при перемещении',
+    inputSameEdge: 'Привязка одинаковых границ',
+    inputSameEdgeDesc: 'Стыковка левого края к левому, верхнего к верхнему',
+    inputEdgeCenter: 'Выравнивание центров окон',
+    inputEdgeCenterDesc: 'Привязка по центральным осям соседних окон',
+    inputSnapGap: 'Зазор между привязанными окнами:',
+    inputResetZoom: 'Сброс масштаба при новом окне',
 
     // Shortcuts View
     shortcutsAutostartTitle: 'Автозапуск',
@@ -372,6 +380,8 @@ export const translations = {
     windowsRulesHeader: 'Window Rules',
     windowsRulesShow: 'Expand rules',
     windowsRulesHide: 'Collapse rules',
+    windowsExpand: 'Settings',
+    windowsCollapse: 'Collapse',
 
     // Input View
     inputKbdTitle: 'Keyboard & Layouts',
@@ -384,8 +394,14 @@ export const translations = {
     inputTrackpadSpeed: 'Trackpad speed:',
     inputTapToClick: 'Tap to click',
     inputSnapTitle: 'Window Snapping',
-    inputSnapDesc: 'Magnetic edge snapping',
-    inputSameEdge: 'Snap on same edge',
+    inputSnapDesc: 'Magnetic edge snapping on canvas',
+    inputSnapEnabled: 'Magnetic window snapping',
+    inputSnapEnabledDesc: 'Snap windows to neighbors while dragging',
+    inputSameEdge: 'Snap same edges',
+    inputSameEdgeDesc: 'Snap left-to-left and top-to-top edges',
+    inputEdgeCenter: 'Align window centers',
+    inputEdgeCenterDesc: 'Snap midpoints along moving axis',
+    inputSnapGap: 'Gap between snapped windows:',
     inputResetZoom: 'Reset zoom on new window',
 
     // Shortcuts View

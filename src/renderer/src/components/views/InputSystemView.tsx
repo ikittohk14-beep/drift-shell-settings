@@ -213,14 +213,62 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
         </div>
 
         <div className="divide-y divide-[#262529]">
+          {/* Master Snap toggle */}
           <div className="flex items-center justify-between py-2.5 text-xs">
-            <span className="text-[#e5e2e3]">{t('inputSameEdge')}</span>
+            <div className="pr-3">
+              <div className="text-[#e5e2e3] font-medium">{t('inputSnapEnabled')}</div>
+              <div className="text-[10px] text-[#929092] mt-0.5">{t('inputSnapEnabledDesc')}</div>
+            </div>
             <Toggle
-              checked={snap.same_edge ?? true}
+              checked={snap.enabled !== false}
+              onChange={(val) => onSnapChange({ ...snap, enabled: val })}
+            />
+          </div>
+
+          {/* Same edge toggle */}
+          <div className="flex items-center justify-between py-2.5 text-xs">
+            <div className="pr-3">
+              <div className="text-[#e5e2e3]">{t('inputSameEdge')}</div>
+              <div className="text-[10px] text-[#929092] mt-0.5">{t('inputSameEdgeDesc')}</div>
+            </div>
+            <Toggle
+              checked={snap.same_edge ?? false}
               onChange={(val) => onSnapChange({ ...snap, same_edge: val })}
             />
           </div>
 
+          {/* Edge center toggle */}
+          <div className="flex items-center justify-between py-2.5 text-xs">
+            <div className="pr-3">
+              <div className="text-[#e5e2e3]">{t('inputEdgeCenter')}</div>
+              <div className="text-[10px] text-[#929092] mt-0.5">{t('inputEdgeCenterDesc')}</div>
+            </div>
+            <Toggle
+              checked={snap.edge_center ?? false}
+              onChange={(val) => onSnapChange({ ...snap, edge_center: val })}
+            />
+          </div>
+
+          {/* Snap Gap slider */}
+          <div className="py-2.5 space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-[#929092]">{t('inputSnapGap')}</span>
+              <span className="font-mono text-[#e5e2e3] font-bold">{snap.gap ?? 12} px</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="40"
+              step="2"
+              value={snap.gap ?? 12}
+              onChange={(e) =>
+                onSnapChange({ ...snap, gap: parseInt(e.target.value, 10) })
+              }
+              className="w-full cursor-pointer accent-[#859aea]"
+            />
+          </div>
+
+          {/* Reset zoom on new window */}
           <div className="flex items-center justify-between py-2.5 text-xs">
             <span className="text-[#e5e2e3]">{t('inputResetZoom')}</span>
             <Toggle
