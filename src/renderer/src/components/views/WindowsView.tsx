@@ -9,7 +9,7 @@ interface WindowsViewProps {
 }
 
 export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [activeWindows, setActiveWindows] = useState<ActiveWindow[]>([]);
 
   const fetchActive = async () => {
@@ -94,7 +94,7 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
           type="button"
           onClick={fetchActive}
           className="w-8 h-8 rounded-xl bg-[#1a191d] border border-[#262529] hover:border-[#36353b] text-[#859aea] flex items-center justify-center text-xs transition-colors cursor-pointer"
-          title="Refresh Windows"
+          title={language === 'ru' ? 'Обновить окна' : 'Refresh Windows'}
         >
           ::
         </button>
@@ -112,7 +112,9 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Compositor</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Композитор' : 'Compositor'}
+            </div>
             <div className="text-xl font-bold text-[#e5e2e3] tracking-tight">
               driftwm
             </div>
@@ -129,18 +131,26 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
               <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
                 {uniqueApps.length}
               </span>
-              <span className="text-xs text-[#929092] ml-1 font-medium">apps</span>
+              <span className="text-xs text-[#929092] ml-1 font-medium">
+                {language === 'ru' ? 'окон' : 'apps'}
+              </span>
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">clients</span>
+            <span className="text-[10px] text-[#474648] font-mono">
+              {language === 'ru' ? 'клиенты' : 'clients'}
+            </span>
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Window Pipeline</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Обработка окон' : 'Window Pipeline'}
+            </div>
             <div className="text-sm font-semibold text-[#859aea] truncate">
-              {rules.length > 0 ? `${rules.length} custom rules` : 'Hardware Blit'}
+              {rules.length > 0
+                ? `${rules.length} ${language === 'ru' ? 'правил' : 'custom rules'}`
+                : (language === 'ru' ? 'Прямой вывод' : 'Hardware Blit')}
             </div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
-              Dual Kawase Shader
+              {language === 'ru' ? 'Шейдер Dual Kawase' : 'Dual Kawase Shader'}
             </div>
           </div>
         </div>
@@ -156,7 +166,9 @@ export const WindowsView: React.FC<WindowsViewProps> = ({ rules, onChange }) => 
             <span className="text-xs font-semibold text-[#e5e2e3]">{t('windowsActiveApps')}</span>
             <span className="text-[10px] text-[#929092]">({uniqueApps.length})</span>
           </div>
-          <span className="text-[10px] text-[#474648] font-mono">app_id override</span>
+          <span className="text-[10px] text-[#474648] font-mono">
+            {language === 'ru' ? 'правила app_id' : 'app_id override'}
+          </span>
         </div>
 
         {uniqueApps.length === 0 ? (

@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n';
 import type { AudioStatus } from '../../../../preload/types';
 
 export const AudioView: React.FC = () => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [status, setStatus] = useState<AudioStatus>({
     volume: 50,
     isMuted: false,
@@ -87,7 +87,7 @@ export const AudioView: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">{t('audioTitle')}</h1>
           <p className="text-xs text-[#929092] mt-0.5">
-            PipeWire • WirePlumber • {status.isMuted ? t('audioMuted') : `${status.volume}% output`}
+            PipeWire • WirePlumber • {status.isMuted ? t('audioMuted') : `${status.volume}% ${language === 'ru' ? 'громкость' : 'output'}`}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -95,7 +95,7 @@ export const AudioView: React.FC = () => {
             type="button"
             onClick={fetchStatus}
             className="w-8 h-8 rounded-xl bg-[#1a191d] border border-[#262529] hover:border-[#36353b] text-[#859aea] flex items-center justify-center text-xs transition-colors cursor-pointer"
-            title="Refresh Audio"
+            title={language === 'ru' ? 'Обновить' : 'Refresh Audio'}
           >
             ::
           </button>
@@ -115,12 +115,18 @@ export const AudioView: React.FC = () => {
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Master Sink</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Основной выход' : 'Master Sink'}
+            </div>
             <div className="text-xl font-bold text-[#e5e2e3] tracking-tight">
-              {status.isMuted ? 'Muted' : 'Online'}
+              {status.isMuted
+                ? (language === 'ru' ? 'Без звука' : 'Muted')
+                : (language === 'ru' ? 'Активен' : 'Online')}
             </div>
             <div className={`text-[10px] mt-0.5 ${!status.isMuted ? 'text-[#a3d4a0]' : 'text-[#ffb4ab]'}`}>
-              {!status.isMuted ? '● active stream' : '○ output muted'}
+              {!status.isMuted
+                ? (language === 'ru' ? '● поток активен' : '● active stream')
+                : (language === 'ru' ? '○ звук отключен' : '○ output muted')}
             </div>
           </div>
         </div>
@@ -134,19 +140,23 @@ export const AudioView: React.FC = () => {
               </span>
               <span className="text-xs text-[#929092] ml-1 font-medium">%</span>
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">gain</span>
+            <span className="text-[10px] text-[#474648] font-mono">
+              {language === 'ru' ? 'уровень' : 'gain'}
+            </span>
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Output Volume</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Громкость выхода' : 'Output Volume'}
+            </div>
             <div className="text-sm font-semibold text-[#859aea] truncate">
               {status.isMuted
                 ? t('audioMuted')
                 : status.volume > 80
-                ? 'High Gain'
+                ? (language === 'ru' ? 'Высокий уровень' : 'High Gain')
                 : status.volume > 30
-                ? 'Nominal Gain'
-                : 'Low Gain'}
+                ? (language === 'ru' ? 'Нормальный уровень' : 'Nominal Gain')
+                : (language === 'ru' ? 'Низкий уровень' : 'Low Gain')}
             </div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
               0 dB ~ +6 dB limit
@@ -160,15 +170,21 @@ export const AudioView: React.FC = () => {
         {/* Dot Matrix Channels */}
         <div className="grid grid-cols-3 gap-2 text-center border-b border-[#262529] pb-3">
           <div>
-            <div className="text-[11px] text-[#929092] font-medium mb-1.5">Channel L</div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">
+              {language === 'ru' ? 'Левый канал' : 'Channel L'}
+            </div>
             {renderChannelDots(8, 'text-[#859aea]')}
           </div>
           <div>
-            <div className="text-[11px] text-[#929092] font-medium mb-1.5">Channel R</div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">
+              {language === 'ru' ? 'Правый канал' : 'Channel R'}
+            </div>
             {renderChannelDots(8, 'text-[#a3d4a0]')}
           </div>
           <div>
-            <div className="text-[11px] text-[#929092] font-medium mb-1.5">Peak Meter</div>
+            <div className="text-[11px] text-[#929092] font-medium mb-1.5">
+              {language === 'ru' ? 'Пик-метр' : 'Peak Meter'}
+            </div>
             {renderChannelDots(8, 'text-[#e8cf8d]')}
           </div>
         </div>
@@ -220,7 +236,9 @@ export const AudioView: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-semibold text-[#e5e2e3]">{t('audioPavucontrol')}</div>
-              <div className="text-[10px] text-[#929092]">PulseAudio / ALSA Routing • Dynamic Nodes</div>
+              <div className="text-[10px] text-[#929092]">
+                {language === 'ru' ? 'Маршрутизация ALSA / PulseAudio' : 'PulseAudio / ALSA Routing • Dynamic Nodes'}
+              </div>
             </div>
           </div>
 

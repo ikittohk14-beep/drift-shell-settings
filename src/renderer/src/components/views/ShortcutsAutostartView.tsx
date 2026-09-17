@@ -14,7 +14,7 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
   onAutostartChange,
   onKeybindingsChange,
 }) => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [newCmd, setNewCmd] = useState<string>('');
   const [comboInput, setComboInput] = useState<string>('');
   const [actionInput, setActionInput] = useState<string>('');
@@ -69,7 +69,9 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
             <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
               1
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">startup</span>
+            <span className="text-[10px] text-[#474648] font-mono">
+              {language === 'ru' ? 'старт' : 'startup'}
+            </span>
           </div>
 
           <div>
@@ -77,13 +79,15 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
               <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
                 {autostart.length}
               </span>
-              <span className="text-xs text-[#929092] ml-1 font-medium">services</span>
+              <span className="text-xs text-[#929092] ml-1 font-medium">
+                {language === 'ru' ? 'служб' : 'services'}
+              </span>
             </div>
             <div className="text-[11px] text-[#929092] font-medium mt-0.5">
-              Startup Daemons
+              {language === 'ru' ? 'Службы автозапуска' : 'Startup Daemons'}
             </div>
             <div className="text-[10px] mt-1 text-[#a3d4a0]">
-              ● background spawn
+              {language === 'ru' ? '● запуск в фоне' : '● background spawn'}
             </div>
           </div>
         </div>
@@ -95,18 +99,22 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
               <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
                 {Object.keys(keybindings).length}
               </span>
-              <span className="text-xs text-[#929092] ml-1 font-medium">binds</span>
+              <span className="text-xs text-[#929092] ml-1 font-medium">
+                {language === 'ru' ? 'клавиш' : 'binds'}
+              </span>
             </div>
             <span className="text-[10px] text-[#474648] font-mono">mod4</span>
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Global Hotkeys</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Горячие клавиши' : 'Global Hotkeys'}
+            </div>
             <div className="text-sm font-semibold text-[#859aea] truncate">
-              driftwm Grabbers
+              {language === 'ru' ? 'Перехватчик driftwm' : 'driftwm Grabbers'}
             </div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
-              ● input dispatch online
+              {language === 'ru' ? '● перехватчик активен' : '● input dispatch online'}
             </div>
           </div>
         </div>
@@ -121,7 +129,9 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
             </div>
             <div>
               <div className="text-xs font-semibold text-[#e5e2e3]">{t('shortcutsAutostartTitle')}</div>
-              <div className="text-[10px] text-[#929092]">Executed on driftwm initialization</div>
+              <div className="text-[10px] text-[#929092]">
+                {language === 'ru' ? 'Выполняются при запуске driftwm' : 'Executed on driftwm initialization'}
+              </div>
             </div>
           </div>
           <span className="text-[10px] text-[#474648] font-mono">
@@ -180,7 +190,9 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
             </div>
             <div>
               <div className="text-xs font-semibold text-[#e5e2e3]">{t('shortcutsKeybindingsTitle')}</div>
-              <div className="text-[10px] text-[#929092]">Custom compositor action mappings</div>
+              <div className="text-[10px] text-[#929092]">
+                {language === 'ru' ? 'Привязка действий к клавишам' : 'Custom compositor action mappings'}
+              </div>
             </div>
           </div>
 
@@ -189,7 +201,9 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
             onClick={() => setIsAddKeyOpen(!isAddKeyOpen)}
             className="px-2.5 py-1 rounded-lg bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] text-[10px] text-[#859aea] transition-colors cursor-pointer"
           >
-            {isAddKeyOpen ? `[ ${t('shortcutsCancel')} ]` : `[ + bind ]`}
+            {isAddKeyOpen
+              ? `[ ${t('shortcutsCancel')} ]`
+              : (language === 'ru' ? '[ + клавиша ]' : '[ + bind ]')}
           </button>
         </div>
 

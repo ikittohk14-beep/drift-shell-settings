@@ -33,7 +33,7 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
   onZoomChange,
   onSnapChange,
 }) => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
 
   return (
     <div className="space-y-3.5 max-w-xl text-[#e5e2e3] font-mono text-xs">
@@ -59,7 +59,9 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Active Layouts</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Раскладки' : 'Active Layouts'}
+            </div>
             <div className="text-xl font-bold text-[#859aea] tracking-tight uppercase">
               {keyboard.layout || 'us, ru'}
             </div>
@@ -76,18 +78,24 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
               <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
                 {mouse.accel_speed ?? 0}
               </span>
-              <span className="text-xs text-[#929092] ml-1 font-medium">speed</span>
+              <span className="text-xs text-[#929092] ml-1 font-medium">
+                {language === 'ru' ? 'скорость' : 'speed'}
+              </span>
             </div>
             <span className="text-[10px] text-[#474648] font-mono">libinput</span>
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Pointer Profile</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Профиль курсора' : 'Pointer Profile'}
+            </div>
             <div className="text-sm font-semibold text-[#859aea] truncate">
-              Adaptive Acceleration
+              {language === 'ru' ? 'Адаптивное ускорение' : 'Adaptive Acceleration'}
             </div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
-              {trackpad.tap_to_click ? '● tap-to-click on' : '○ tap-to-click off'}
+              {trackpad.tap_to_click
+                ? (language === 'ru' ? '● касание вкл' : '● tap-to-click on')
+                : (language === 'ru' ? '○ касание выкл' : '○ tap-to-click off')}
             </div>
           </div>
         </div>

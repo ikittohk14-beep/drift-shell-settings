@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n';
 import type { BluetoothStatus, BluetoothDeviceItem } from '../../../../preload/types';
 
 export const BluetoothView: React.FC = () => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [status, setStatus] = useState<BluetoothStatus>({
     enabled: true,
     connected: false,
@@ -160,13 +160,13 @@ export const BluetoothView: React.FC = () => {
       name.includes('airpods') ||
       name.includes('wh-')
     ) {
-      return { tag: '[audio]', color: 'text-[#859aea]' };
+      return { tag: language === 'ru' ? '[звук]' : '[audio]', color: 'text-[#859aea]' };
     }
     if (iconType.includes('keyboard') || name.includes('keyboard') || name.includes('клавиатура')) {
-      return { tag: '[kbd]', color: 'text-[#a3d4a0]' };
+      return { tag: language === 'ru' ? '[клав]' : '[kbd]', color: 'text-[#a3d4a0]' };
     }
     if (iconType.includes('mouse') || name.includes('mouse') || name.includes('мышь')) {
-      return { tag: '[mouse]', color: 'text-[#e8cf8d]' };
+      return { tag: language === 'ru' ? '[мышь]' : '[mouse]', color: 'text-[#e8cf8d]' };
     }
     if (
       iconType.includes('phone') ||
@@ -175,12 +175,12 @@ export const BluetoothView: React.FC = () => {
       name.includes('pixel') ||
       name.includes('galaxy')
     ) {
-      return { tag: '[phone]', color: 'text-[#88c0d0]' };
+      return { tag: language === 'ru' ? '[тел]' : '[phone]', color: 'text-[#88c0d0]' };
     }
     if (iconType.includes('computer') || iconType.includes('laptop')) {
-      return { tag: '[pc]', color: 'text-[#c0c6dc]' };
+      return { tag: language === 'ru' ? '[пк]' : '[pc]', color: 'text-[#c0c6dc]' };
     }
-    return { tag: '[dev]', color: 'text-[#929092]' };
+    return { tag: language === 'ru' ? '[устр]' : '[dev]', color: 'text-[#929092]' };
   };
 
   const pairedDevices = devices.filter((d) => d.paired);
@@ -236,12 +236,20 @@ export const BluetoothView: React.FC = () => {
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Adapter State</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Состояние адаптера' : 'Adapter State'}
+            </div>
             <div className="text-xl font-bold text-[#e5e2e3] tracking-tight">
-              {status.enabled ? (status.connected ? 'Connected' : 'Standby') : 'Disabled'}
+              {status.enabled
+                ? (status.connected
+                    ? (language === 'ru' ? 'Подключено' : 'Connected')
+                    : (language === 'ru' ? 'Ожидание' : 'Standby'))
+                : (language === 'ru' ? 'Выключено' : 'Disabled')}
             </div>
             <div className={`text-[10px] mt-0.5 ${status.enabled ? 'text-[#a3d4a0]' : 'text-[#474648]'}`}>
-              {status.enabled ? '● bluez radio on' : '○ controller down'}
+              {status.enabled
+                ? (language === 'ru' ? '● адаптер активен' : '● adapter active')
+                : (language === 'ru' ? '○ адаптер выключен' : '○ adapter disabled')}
             </div>
           </div>
         </div>
@@ -257,7 +265,9 @@ export const BluetoothView: React.FC = () => {
                 <span className="text-xs text-[#929092] ml-1 font-medium">%</span>
               )}
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">battery</span>
+            <span className="text-[10px] text-[#474648] font-mono">
+              {language === 'ru' ? 'батарея' : 'battery'}
+            </span>
           </div>
 
           <div>
@@ -304,7 +314,9 @@ export const BluetoothView: React.FC = () => {
               2
             </div>
             <div>
-              <div className="text-xs font-semibold text-[#e5e2e3]">Bluetooth Manager</div>
+              <div className="text-xs font-semibold text-[#e5e2e3]">
+                {language === 'ru' ? 'Менеджер Bluetooth' : 'Bluetooth Manager'}
+              </div>
               <div className="text-[10px] text-[#929092]">{t('btBluemanManager')}</div>
             </div>
           </div>
@@ -337,7 +349,9 @@ export const BluetoothView: React.FC = () => {
               disabled={isScanning}
               className="px-2.5 py-1 rounded-lg bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] text-[10px] text-[#859aea] transition-colors cursor-pointer"
             >
-              {isScanning ? '[ scanning.. ]' : '[ scan ]'}
+              {isScanning
+                ? (language === 'ru' ? '[ поиск.. ]' : '[ scanning.. ]')
+                : (language === 'ru' ? '[ поиск ]' : '[ scan ]')}
             </button>
           </div>
 

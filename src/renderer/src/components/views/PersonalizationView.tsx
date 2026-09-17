@@ -30,7 +30,7 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
   onDecorationsChange,
   onOutlineChange,
 }) => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [wallpapers, setWallpapers] = useState<WallpaperItem[]>([]);
   const [currentDir, setCurrentDir] = useState<string>('~/Пикчи/Обои');
   const [loadingWallpapers, setLoadingWallpapers] = useState<boolean>(true);
@@ -163,7 +163,9 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
             <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
               1
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">corners</span>
+            <span className="text-[10px] text-[#474648] font-mono">
+              {language === 'ru' ? 'углы' : 'corners'}
+            </span>
           </div>
 
           <div>
@@ -204,7 +206,9 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
               </span>
               <span className="text-xs text-[#929092] ml-1 font-medium">px</span>
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">border</span>
+            <span className="text-[10px] text-[#474648] font-mono">
+              {language === 'ru' ? 'рамка' : 'border'}
+            </span>
           </div>
 
           <div>
@@ -219,7 +223,7 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
               </span>
             </div>
             <div className="text-[10px] text-[#474648] mt-1 font-mono">
-              outline {currentOutlineThickness}px
+              {language === 'ru' ? 'внешняя' : 'outline'} {currentOutlineThickness}px
             </div>
           </div>
         </div>
@@ -241,7 +245,7 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
           </div>
 
           <span className="text-[10px] text-[#474648] font-mono shrink-0">
-            {wallpapers.length} items
+            {wallpapers.length} {language === 'ru' ? 'шт.' : 'items'}
           </span>
         </div>
 
@@ -275,7 +279,7 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
                 >
                   {isShader ? (
                     <div className="absolute inset-0 bg-[#161518] flex items-center justify-center text-[10px] text-[#c0c6dc]">
-                      [ shader ]
+                      [ {language === 'ru' ? 'шейдер' : 'shader'} ]
                     </div>
                   ) : (
                     <img
@@ -476,7 +480,9 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
             </div>
             <div>
               <div className="text-xs font-semibold text-[#e5e2e3]">{t('persVisualEffects')}</div>
-              <div className="text-[10px] text-[#929092]">Dual Kawase Backdrop Shader</div>
+              <div className="text-[10px] text-[#929092]">
+                {language === 'ru' ? 'Аппаратный шейдер Dual Kawase' : 'Dual Kawase Backdrop Shader'}
+              </div>
             </div>
           </div>
 

@@ -32,7 +32,7 @@ export const Titlebar: React.FC<TitlebarProps> = ({
 
       {/* Center: Subtle shortcut hint */}
       <div className="hidden sm:flex items-center text-[10px] text-[#474648] pointer-events-none tracking-wide">
-        [ esc / super+q to close ]
+        {language === 'ru' ? '[ esc / super+q — закрыть ]' : '[ esc / super+q to close ]'}
       </div>
 
       {/* Right: Status and Language Switcher */}

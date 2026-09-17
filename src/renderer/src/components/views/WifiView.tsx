@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n';
 import type { WifiStatus, WifiNetwork } from '../../../../preload/types';
 
 export const WifiView: React.FC = () => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [status, setStatus] = useState<WifiStatus>({
     enabled: true,
     connected: false,
@@ -175,12 +175,20 @@ export const WifiView: React.FC = () => {
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Interface State</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Состояние интерфейса' : 'Interface State'}
+            </div>
             <div className="text-xl font-bold text-[#e5e2e3] tracking-tight">
-              {status.enabled ? (status.connected ? 'Connected' : 'Scanning') : 'Disabled'}
+              {status.enabled
+                ? (status.connected
+                    ? (language === 'ru' ? 'Подключено' : 'Connected')
+                    : (language === 'ru' ? 'Поиск...' : 'Scanning'))
+                : (language === 'ru' ? 'Выключено' : 'Disabled')}
             </div>
             <div className={`text-[10px] mt-0.5 ${status.enabled ? 'text-[#a3d4a0]' : 'text-[#474648]'}`}>
-              {status.enabled ? '● radio online' : '○ radio offline'}
+              {status.enabled
+                ? (language === 'ru' ? '● адаптер активен' : '● adapter active')
+                : (language === 'ru' ? '○ адаптер выключен' : '○ adapter disabled')}
             </div>
           </div>
         </div>
@@ -194,7 +202,9 @@ export const WifiView: React.FC = () => {
               </span>
               <span className="text-xs text-[#929092] ml-1 font-medium">%</span>
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">signal</span>
+            <span className="text-[10px] text-[#474648] font-mono">
+              {language === 'ru' ? 'сигнал' : 'signal'}
+            </span>
           </div>
 
           <div>
@@ -241,8 +251,12 @@ export const WifiView: React.FC = () => {
               2
             </div>
             <div>
-              <div className="text-xs font-semibold text-[#e5e2e3]">Network Protocol</div>
-              <div className="text-[10px] text-[#929092]">IPv4 / IPv6 DHCP • Wi-Fi 6 Ready</div>
+              <div className="text-xs font-semibold text-[#e5e2e3]">
+                {language === 'ru' ? 'Сетевой протокол' : 'Network Protocol'}
+              </div>
+              <div className="text-[10px] text-[#929092]">
+                {language === 'ru' ? 'IPv4 / IPv6 DHCP • Поддержка Wi-Fi 6' : 'IPv4 / IPv6 DHCP • Wi-Fi 6 Ready'}
+              </div>
             </div>
           </div>
 
@@ -270,7 +284,9 @@ export const WifiView: React.FC = () => {
               disabled={isScanning}
               className="text-[#859aea] hover:text-[#a4b5f5] transition-colors cursor-pointer text-[10px]"
             >
-              {isScanning ? '[ scanning... ]' : `[ ${t('wifiRefresh')} ]`}
+              {isScanning
+                ? (language === 'ru' ? '[ поиск... ]' : '[ scanning... ]')
+                : `[ ${t('wifiRefresh')} ]`}
             </button>
           </div>
 
@@ -320,9 +336,13 @@ export const WifiView: React.FC = () => {
                         ) : (
                           <>
                             {isEncrypted ? (
-                              <span className="text-[10px] text-[#474648]">[sec]</span>
+                              <span className="text-[10px] text-[#474648]">
+                                {language === 'ru' ? '[пароль]' : '[sec]'}
+                              </span>
                             ) : (
-                              <span className="text-[10px] text-[#a3d4a0]">[open]</span>
+                              <span className="text-[10px] text-[#a3d4a0]">
+                                {language === 'ru' ? '[откр]' : '[open]'}
+                              </span>
                             )}
 
                             {isEncrypted && !net.isSaved && (

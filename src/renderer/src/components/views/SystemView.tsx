@@ -2,7 +2,7 @@ import React from 'react';
 import { useI18n } from '../../i18n';
 
 export const SystemView: React.FC = () => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
 
   const handleAction = async (action: 'poweroff' | 'reboot' | 'suspend' | 'lock') => {
     try {
@@ -48,7 +48,9 @@ export const SystemView: React.FC = () => {
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">Distribution & Kernel</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'Дистрибутив и ядро' : 'Distribution & Kernel'}
+            </div>
             <div className="text-xl font-bold text-[#e5e2e3] tracking-tight">
               CachyOS Linux
             </div>
@@ -71,7 +73,9 @@ export const SystemView: React.FC = () => {
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">RAM + ZRAM Swap</div>
+            <div className="text-[11px] text-[#929092] font-medium">
+              {language === 'ru' ? 'ОЗУ + ZRAM Своп' : 'RAM + ZRAM Swap'}
+            </div>
             <div className="text-sm font-semibold text-[#859aea] truncate">
               Radeon Vega APU
             </div>
@@ -89,8 +93,12 @@ export const SystemView: React.FC = () => {
             2
           </div>
           <div>
-            <div className="text-xs font-semibold text-[#e5e2e3]">Compositor & Session</div>
-            <div className="text-[10px] text-[#929092]">driftwm live reload and screen locking</div>
+            <div className="text-xs font-semibold text-[#e5e2e3]">
+              {language === 'ru' ? 'Сессия и композитор' : 'Compositor & Session'}
+            </div>
+            <div className="text-[10px] text-[#929092]">
+              {language === 'ru' ? 'Перезагрузка driftwm и блокировка' : 'driftwm live reload and screen locking'}
+            </div>
           </div>
         </div>
 
@@ -100,7 +108,9 @@ export const SystemView: React.FC = () => {
             onClick={handleReloadDriftwm}
             className="p-3 rounded-xl bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] hover:border-[#859aea] text-left transition-all cursor-pointer group"
           >
-            <div className="text-[10px] text-[#a3d4a0] font-bold">[ reload ]</div>
+            <div className="text-[10px] text-[#a3d4a0] font-bold">
+              [ {language === 'ru' ? 'обновить' : 'reload'} ]
+            </div>
             <div className="text-xs font-semibold text-[#e5e2e3] mt-1">{t('systemReloadDriftwm')}</div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">config.toml</div>
           </button>
@@ -110,7 +120,9 @@ export const SystemView: React.FC = () => {
             onClick={() => handleAction('lock')}
             className="p-3 rounded-xl bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] hover:border-[#859aea] text-left transition-all cursor-pointer group"
           >
-            <div className="text-[10px] text-[#859aea] font-bold">[ lock ]</div>
+            <div className="text-[10px] text-[#859aea] font-bold">
+              [ {language === 'ru' ? 'блок' : 'lock'} ]
+            </div>
             <div className="text-xs font-semibold text-[#e5e2e3] mt-1">{t('systemLock')}</div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">lock.sh</div>
           </button>
@@ -124,8 +136,12 @@ export const SystemView: React.FC = () => {
             3
           </div>
           <div>
-            <div className="text-xs font-semibold text-[#e5e2e3]">Power State</div>
-            <div className="text-[10px] text-[#929092]">Systemd power operations</div>
+            <div className="text-xs font-semibold text-[#e5e2e3]">
+              {language === 'ru' ? 'Управление питанием' : 'Power State'}
+            </div>
+            <div className="text-[10px] text-[#929092]">
+              {language === 'ru' ? 'Операции завершения работы' : 'Systemd power operations'}
+            </div>
           </div>
         </div>
 
@@ -135,7 +151,9 @@ export const SystemView: React.FC = () => {
             onClick={() => handleAction('suspend')}
             className="p-3 rounded-xl bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] hover:border-[#c0c6dc] text-left transition-all cursor-pointer group"
           >
-            <div className="text-[10px] text-[#c0c6dc] font-bold">[ sleep ]</div>
+            <div className="text-[10px] text-[#c0c6dc] font-bold">
+              [ {language === 'ru' ? 'сон' : 'sleep'} ]
+            </div>
             <div className="text-xs font-semibold text-[#e5e2e3] mt-1">{t('systemSuspend')}</div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">suspend</div>
           </button>
@@ -145,7 +163,9 @@ export const SystemView: React.FC = () => {
             onClick={() => handleAction('reboot')}
             className="p-3 rounded-xl bg-[#201f21] hover:bg-[#2a292d] border border-[#262529] hover:border-[#e8cf8d] text-left transition-all cursor-pointer group"
           >
-            <div className="text-[10px] text-[#e8cf8d] font-bold">[ reboot ]</div>
+            <div className="text-[10px] text-[#e8cf8d] font-bold">
+              [ {language === 'ru' ? 'перезагрузка' : 'reboot'} ]
+            </div>
             <div className="text-xs font-semibold text-[#e5e2e3] mt-1">{t('systemReboot')}</div>
             <div className="text-[10px] text-[#474648] mt-0.5 font-mono">reboot</div>
           </button>
@@ -155,7 +175,9 @@ export const SystemView: React.FC = () => {
             onClick={() => handleAction('poweroff')}
             className="p-3 rounded-xl bg-[#201f21] hover:bg-[#ffb4ab]/15 border border-[#262529] hover:border-[#ffb4ab] text-left transition-all cursor-pointer group"
           >
-            <div className="text-[10px] text-[#ffb4ab] font-bold">[ poweroff ]</div>
+            <div className="text-[10px] text-[#ffb4ab] font-bold">
+              [ {language === 'ru' ? 'выключение' : 'poweroff'} ]
+            </div>
             <div className="text-xs font-semibold text-[#ffb4ab] mt-1">{t('systemPoweroff')}</div>
             <div className="text-[10px] text-[#ffb4ab]/60 mt-0.5 font-mono">shutdown</div>
           </button>
