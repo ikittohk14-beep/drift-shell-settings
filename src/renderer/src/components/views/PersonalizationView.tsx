@@ -121,9 +121,9 @@ export const PersonalizationView: React.FC<PersonalizationViewProps> = ({
       {/* ── Page Header ────────────────────────────────────────────── */}
       <div className="flex items-center justify-between pb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">Personalization</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">{t('tabPersonalization')}</h1>
           <p className="text-xs text-[#929092] mt-0.5">
-            driftwm geometry • wallpapers • visual accents
+            {t('persBordersDesc')}
           </p>
         </div>
         <div className="flex items-center space-x-2">

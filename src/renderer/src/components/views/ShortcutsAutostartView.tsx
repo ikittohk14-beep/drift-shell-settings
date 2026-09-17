@@ -54,9 +54,9 @@ export const ShortcutsAutostartView: React.FC<ShortcutsAutostartViewProps> = ({
       {/* ── Page Header ────────────────────────────────────────────── */}
       <div className="flex items-center justify-between pb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">Shortcuts & Daemons</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">{t('tabShortcuts')}</h1>
           <p className="text-xs text-[#929092] mt-0.5">
-            System startup commands • Global compositor keybindings
+            {t('shortcutsAutostartTitle')} • {t('shortcutsKeybindingsTitle')}
           </p>
         </div>
       </div>

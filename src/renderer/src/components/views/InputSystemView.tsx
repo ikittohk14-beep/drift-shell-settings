@@ -40,9 +40,9 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
       {/* ── Page Header ────────────────────────────────────────────── */}
       <div className="flex items-center justify-between pb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">Input & Pointers</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">{t('tabInput')}</h1>
           <p className="text-xs text-[#929092] mt-0.5">
-            libinput • XKB Layouts • Magnetic Snap
+            {t('inputKbdDesc')} • {t('inputMouseDesc')}
           </p>
         </div>
       </div>
