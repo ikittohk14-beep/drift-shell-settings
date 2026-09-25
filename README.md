@@ -1,7 +1,7 @@
 # drift-shell-settings
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.0-859aea?style=for-the-badge" alt="Version 1.0.0" />
+  <img src="https://img.shields.io/badge/Version-1.1.0-859aea?style=for-the-badge" alt="Version 1.1.0" />
   <img src="https://img.shields.io/badge/Platform-CachyOS%20%7C%20Arch%20Linux-00a4dc?style=for-the-badge&logo=arch-linux" alt="Arch Linux / CachyOS" />
   <img src="https://img.shields.io/badge/Wayland-Native-5277C3?style=for-the-badge&logo=wayland" alt="Wayland Native" />
   <img src="https://img.shields.io/badge/Compositor-driftwm-e5e2e3?style=for-the-badge" alt="driftwm" />
@@ -12,6 +12,16 @@
   <b>Drift Shell Settings — современный, минималистичный центр управления и настроек системы для тайлингового Wayland-композитора <a href="https://github.com/malbiruk/driftwm">driftwm</a>.</b><br/>
   <i>A sleek, modern settings & control center suite tailored specifically for the driftwm infinite canvas compositor on CachyOS / Arch Linux.</i>
 </p>
+
+---
+
+## 🆕 Что нового в v1.1.0 (What's New)
+
+- 🎛️ **DotMeter UI:** фирменный минималистичный индикатор параметров и громкости в стиле точечной терминальной эстетики.
+- 🖼️ **Галерея обоев:** быстрый генератор превью в 1/4 разрешения с карточным контейнером и плавной сеткой выбора.
+- 🪟 **Аккордеон правил окон (Window Rules):** компактное сворачивание правил, поддержка параметров `blur_radius`, `blur_strength`, детальная прозрачность и привязка к холсту driftwm.
+- 🌐 **Чистая русская локализация:** аккуратный лаконичный перевод интерфейса без визуального шума.
+- 🔊 **Улучшенная интеграция звука и сети:** мгновенный отклик ползунков WirePlumber и NetworkManager.
 
 ---
 
@@ -115,3 +125,12 @@ pnpm run build
 cat << 'EOF' > ~/.local/bin/drift-shell-settings
 #!/usr/bin/env bash
 exec electron /path/to/drift-shell-settings --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations "$@"
+EOF
+chmod +x ~/.local/bin/drift-shell-settings
+```
+
+---
+
+## 📄 Лицензия (License)
+
+Распространяется под лицензией [MIT](LICENSE). Разработано для комфортной работы в экосистеме **driftwm**.

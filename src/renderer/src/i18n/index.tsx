@@ -27,7 +27,7 @@ export const translations = {
     tabBluetooth: 'Bluetooth',
     tabPersonalization: 'Персонализация',
     tabAudio: 'Звук',
-    tabWindows: 'Правила и параметры окон',
+    tabWindows: 'Правила окон',
     tabInput: 'Клавиатура и мышь',
     tabShortcuts: 'Автозапуск и клавиши',
     tabSystem: 'Управление ПК',
@@ -61,6 +61,9 @@ export const translations = {
     wifiEditorButton: 'Все сетевые подключения',
     wifiFailedToConnect: 'Не удалось подключиться к сети',
     wifiConnectionError: 'Ошибка подключения',
+    wifiDisconnect: 'Отключить',
+    wifiDisconnecting: 'Отключение...',
+    wifiConnectedBadge: 'Подключено',
 
     // Bluetooth View
     btTitle: 'Bluetooth',
@@ -108,7 +111,12 @@ export const translations = {
     // Audio View
     audioTitle: 'Громкость звука',
     audioMuted: 'Звук отключен',
-    audioPavucontrol: 'Расширенный микшер',
+    audioPavucontrol: 'Внешний микшер (pavucontrol)',
+    audioMixerTitle: 'Микшер громкости приложений',
+    audioMixerDesc: 'Управление громкостью для запущенных программ',
+    audioNoStreams: 'Нет активных аудиопотоков',
+    audioNoStreamsDesc: 'Приложения, воспроизводящие звук, автоматически появятся здесь',
+    audioMasterCard: 'Основной выход',
 
     // Windows View
     windowsTitle: 'Правила и параметры окон',
@@ -168,6 +176,15 @@ export const translations = {
     windowsRulesHide: 'Свернуть правила',
     windowsExpand: 'Настройки',
     windowsCollapse: 'Свернуть',
+    windowsTabRules: 'Все правила',
+    windowsTabActive: 'Запущенные окна',
+    windowsFilterAll: 'Все',
+    windowsFilterWidgets: 'Виджеты',
+    windowsFilterNoDecor: 'Без рамок',
+    windowsFilterCustomOpacity: 'Прозрачность',
+    windowsCreateRuleForWin: '+ Создать правило',
+    windowsEditExistingRule: 'Редактировать правило',
+    windowsQuickPickTooltip: 'Выбрать приложение',
 
     // Input View
     inputKbdTitle: 'Клавиатура и раскладки',
@@ -275,6 +292,9 @@ export const translations = {
     wifiEditorButton: 'All network connections',
     wifiFailedToConnect: 'Failed to connect to network',
     wifiConnectionError: 'Connection error',
+    wifiDisconnect: 'Disconnect',
+    wifiDisconnecting: 'Disconnecting...',
+    wifiConnectedBadge: 'Connected',
 
     // Bluetooth View
     btTitle: 'Bluetooth',
@@ -322,7 +342,12 @@ export const translations = {
     // Audio View
     audioTitle: 'Master Volume',
     audioMuted: 'Muted',
-    audioPavucontrol: 'Advanced Mixer',
+    audioPavucontrol: 'External Mixer (pavucontrol)',
+    audioMixerTitle: 'Application Volume Mixer',
+    audioMixerDesc: 'Control volume for individual running applications',
+    audioNoStreams: 'No active audio streams',
+    audioNoStreamsDesc: 'Applications playing audio will automatically appear here',
+    audioMasterCard: 'Master Output',
 
     // Windows View
     windowsTitle: 'Window Rules & Parameters',
@@ -382,6 +407,15 @@ export const translations = {
     windowsRulesHide: 'Collapse rules',
     windowsExpand: 'Settings',
     windowsCollapse: 'Collapse',
+    windowsTabRules: 'All Rules',
+    windowsTabActive: 'Active Windows',
+    windowsFilterAll: 'All',
+    windowsFilterWidgets: 'Widgets',
+    windowsFilterNoDecor: 'Borderless',
+    windowsFilterCustomOpacity: 'Opacity',
+    windowsCreateRuleForWin: '+ Create Rule',
+    windowsEditExistingRule: 'Edit Rule',
+    windowsQuickPickTooltip: 'Select app',
 
     // Input View
     inputKbdTitle: 'Keyboard & Layouts',

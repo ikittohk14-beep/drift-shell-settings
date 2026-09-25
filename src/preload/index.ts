@@ -8,6 +8,7 @@ import type {
   WifiStatus,
   BluetoothStatus,
   AudioStatus,
+  AudioStreamItem,
   WifiNetwork,
   BluetoothDeviceItem,
 } from './types';
@@ -163,6 +164,15 @@ const api: DriftControlAPI = {
     }
   },
 
+  disconnectWifi: async (ssid?: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      return await ipcRenderer.invoke('drift:wifi-disconnect', ssid);
+    } catch (error: any) {
+      console.error('[Preload] disconnectWifi error:', error);
+      return { success: false, error: error?.message || 'Failed to disconnect Wi-Fi' };
+    }
+  },
+
   getBluetoothStatus: async (): Promise<BluetoothStatus> => {
     try {
       return await ipcRenderer.invoke('drift:bt-status');
@@ -265,6 +275,32 @@ const api: DriftControlAPI = {
       return await ipcRenderer.invoke('drift:audio-toggle-mute');
     } catch (error) {
       console.error('[Preload] toggleAudioMute error:', error);
+      return false;
+    }
+  },
+
+  getAudioStreams: async (): Promise<AudioStreamItem[]> => {
+    try {
+      return await ipcRenderer.invoke('drift:audio-streams');
+    } catch (error) {
+      console.error('[Preload] getAudioStreams error:', error);
+      return [];
+    }
+  },
+
+  setStreamVolume: async (id: number, volume: number): Promise<void> => {
+    try {
+      await ipcRenderer.invoke('drift:audio-stream-set-volume', { id, volume });
+    } catch (error) {
+      console.error('[Preload] setStreamVolume error:', error);
+    }
+  },
+
+  toggleStreamMute: async (id: number): Promise<boolean> => {
+    try {
+      return await ipcRenderer.invoke('drift:audio-stream-toggle-mute', id);
+    } catch (error) {
+      console.error('[Preload] toggleStreamMute error:', error);
       return false;
     }
   },

@@ -121,6 +121,12 @@ export interface WifiStatus {
   connected: boolean;
   ssid: string | null;
   signal: number;
+  frequency?: string | null;
+  rate?: string | null;
+  ip?: string | null;
+  gateway?: string | null;
+  security?: string | null;
+  device?: string | null;
 }
 
 export interface BluetoothStatus {
@@ -128,11 +134,25 @@ export interface BluetoothStatus {
   connected: boolean;
   deviceName: string | null;
   batteryPercent?: number | null;
+  pairedCount?: number;
+  connectedCount?: number;
+  adapterName?: string | null;
+  profile?: string | null;
 }
 
 export interface AudioStatus {
   volume: number;
   isMuted: boolean;
+}
+
+export interface AudioStreamItem {
+  id: number;
+  name: string;
+  binary?: string;
+  mediaName?: string;
+  volume: number;
+  isMuted: boolean;
+  corked?: boolean;
 }
 
 export interface WifiNetwork {
@@ -172,6 +192,7 @@ export interface DriftControlAPI {
   toggleWifi: (enable: boolean) => Promise<boolean>;
   getWifiNetworks: () => Promise<WifiNetwork[]>;
   connectWifi: (ssid: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  disconnectWifi: (ssid?: string) => Promise<{ success: boolean; error?: string }>;
   openWifiSettings: () => Promise<void>;
   getBluetoothStatus: () => Promise<BluetoothStatus>;
   toggleBluetooth: (enable: boolean) => Promise<boolean>;
@@ -185,6 +206,9 @@ export interface DriftControlAPI {
   getAudioStatus: () => Promise<AudioStatus>;
   setAudioVolume: (volume: number) => Promise<void>;
   toggleAudioMute: () => Promise<boolean>;
+  getAudioStreams: () => Promise<AudioStreamItem[]>;
+  setStreamVolume: (id: number, volume: number) => Promise<void>;
+  toggleStreamMute: (id: number) => Promise<boolean>;
   openAudioSettings: () => Promise<void>;
   systemAction: (action: 'poweroff' | 'reboot' | 'suspend' | 'lock') => Promise<void>;
   onTabSwitch: (callback: (tab: string) => void) => () => void;

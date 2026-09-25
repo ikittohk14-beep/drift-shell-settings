@@ -28,6 +28,7 @@ import type {
   WifiStatus,
   BluetoothStatus,
   AudioStatus,
+  AudioStreamItem,
   WifiNetwork,
   BluetoothDeviceItem,
 } from '../preload/types';
@@ -382,19 +383,67 @@ async function getWifiInfo(): Promise<WifiStatus> {
     }
 
     if (!enabled) {
-      return { enabled: false, connected: false, ssid: null, signal: 0 };
+      return { enabled: false, connected: false, ssid: null, signal: 0, device: 'wlan0' };
     }
 
-    const wifiResult = await execAsync('nmcli -t -f ACTIVE,SSID,SIGNAL dev wifi', {
-      env: { ...process.env, LC_ALL: 'C' },
-    });
-    for (const line of wifiResult.stdout.trim().split('\n')) {
-      if (line.startsWith('yes:')) {
-        const parts = line.split(':');
-        const ssid = parts[1] || 'Wi-Fi';
-        const signal = parseInt(parts[2] || '100', 10);
-        return { enabled: true, connected: true, ssid, signal: isNaN(signal) ? 100 : signal };
+    let ssid: string | null = null;
+    let signal = 0;
+    let frequency: string | null = null;
+    let rate: string | null = null;
+    let security: string | null = null;
+
+    try {
+      const wifiResult = await execAsync('LC_ALL=C nmcli -t -f ACTIVE,SSID,FREQ,RATE,SIGNAL,SECURITY dev wifi', {
+        env: { ...process.env, LC_ALL: 'C' },
+      });
+      for (const line of wifiResult.stdout.trim().split('\n')) {
+        if (line.startsWith('yes:')) {
+          const parts = line.split(':');
+          ssid = parts[1] || 'Wi-Fi';
+          frequency = parts[2] || null;
+          rate = parts[3] || null;
+          const sigVal = parseInt(parts[4] || '0', 10);
+          signal = isNaN(sigVal) ? 0 : sigVal;
+          security = parts[5] || null;
+          break;
+        }
       }
+    } catch (e) {
+      console.error('[Wifi] Active wifi check error:', e);
+    }
+
+    let ip: string | null = null;
+    let gateway: string | null = null;
+    const device = 'wlan0';
+
+    if (ssid) {
+      try {
+        const ipOut = await execAsync('LC_ALL=C nmcli -t -f GENERAL.DEVICE,IP4.ADDRESS,IP4.GATEWAY dev show wlan0', {
+          env: { ...process.env, LC_ALL: 'C' },
+        });
+        for (const line of ipOut.stdout.trim().split('\n')) {
+          if (line.startsWith('IP4.ADDRESS[1]:')) {
+            ip = line.replace('IP4.ADDRESS[1]:', '').trim();
+          } else if (line.startsWith('IP4.GATEWAY:')) {
+            gateway = line.replace('IP4.GATEWAY:', '').trim();
+          }
+        }
+      } catch (e) {
+        // Ignore ip show error
+      }
+
+      return {
+        enabled: true,
+        connected: true,
+        ssid,
+        signal,
+        frequency,
+        rate,
+        ip,
+        gateway,
+        security,
+        device,
+      };
     }
 
     const devResult = await execAsync('nmcli -t -f DEVICE,TYPE,STATE,CONNECTION dev', {
@@ -409,14 +458,14 @@ async function getWifiInfo(): Promise<WifiStatus> {
 
       if (state && state.includes('connected') && dev !== 'lo') {
         const displayName = conn || (type === 'ethernet' ? 'Ethernet' : dev);
-        return { enabled: true, connected: true, ssid: displayName, signal: 100 };
+        return { enabled: true, connected: true, ssid: displayName, signal: 100, device: dev };
       }
     }
 
-    return { enabled: true, connected: false, ssid: null, signal: 0 };
+    return { enabled: true, connected: false, ssid: null, signal: 0, device };
   } catch (error) {
     console.error('[Wifi] Failed to query wifi info:', error);
-    return { enabled: false, connected: false, ssid: null, signal: 0 };
+    return { enabled: false, connected: false, ssid: null, signal: 0, device: 'wlan0' };
   }
 }
 
@@ -501,6 +550,26 @@ async function connectWifiNetwork(ssid: string, password?: string): Promise<{ su
   }
 }
 
+async function disconnectWifiNetwork(ssid?: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (ssid) {
+      const cleanSsid = ssid.replace(/"/g, '\\"');
+      await execAsync(`nmcli con down id "${cleanSsid}"`);
+    } else {
+      await execAsync('nmcli dev disconnect wlan0');
+    }
+    return { success: true };
+  } catch (error: any) {
+    try {
+      await execAsync('nmcli dev disconnect wlan0');
+      return { success: true };
+    } catch (e: any) {
+      console.error('[Wifi] Disconnect error:', e);
+      return { success: false, error: e?.message || 'Failed to disconnect' };
+    }
+  }
+}
+
 async function getBtInfo(): Promise<BluetoothStatus> {
   try {
     let rfkillBlocked = false;
@@ -514,61 +583,96 @@ async function getBtInfo(): Promise<BluetoothStatus> {
     }
 
     if (rfkillBlocked) {
-      return { enabled: false, connected: false, deviceName: null, batteryPercent: null };
+      return { enabled: false, connected: false, deviceName: null, batteryPercent: null, pairedCount: 0, connectedCount: 0, adapterName: 'Bluetooth' };
     }
 
     let enabled = false;
+    let adapterName = 'Bluetooth';
     try {
       const showRes = await execAsync('bluetoothctl show');
       enabled = showRes.stdout.includes('Powered: yes');
+      const aliasMatch = showRes.stdout.match(/Alias:\s*(.*)/);
+      if (aliasMatch) adapterName = aliasMatch[1].trim();
     } catch (e) {
       console.error('[Bluetooth] Show error:', e);
     }
 
     if (!enabled) {
-      return { enabled: false, connected: false, deviceName: null, batteryPercent: null };
+      return { enabled: false, connected: false, deviceName: null, batteryPercent: null, pairedCount: 0, connectedCount: 0, adapterName };
     }
+
+    let pairedCount = 0;
+    try {
+      const { stdout: pairedOut } = await execAsync('bluetoothctl devices Paired');
+      pairedCount = pairedOut.trim().split('\n').filter((l) => l.startsWith('Device ')).length;
+    } catch (e) {}
+
+    let connectedCount = 0;
+    let connectedName: string | null = null;
+    let battery: number | null = null;
+    let profile: string | null = null;
 
     try {
       const { stdout: devOut } = await execAsync('bluetoothctl devices Connected');
-      const lines = devOut.trim().split('\n').filter(Boolean);
+      const lines = devOut.trim().split('\n').filter((l) => l.startsWith('Device '));
+      connectedCount = lines.length;
+
       if (lines.length > 0) {
         const firstLine = lines[0];
-        if (firstLine.startsWith('Device ')) {
-          const parts = firstLine.split(' ');
-          const mac = parts[1];
-          const name = parts.slice(2).join(' ') || 'Bluetooth Device';
-          let battery: number | null = null;
-          try {
-            const { stdout: infoRes } = await execAsync(`bluetoothctl info ${mac}`);
-            for (const line of infoRes.split('\n')) {
-              const trimmed = line.trim();
-              if (trimmed.includes('Battery Percentage:')) {
-                const match =
-                  trimmed.match(/\((0x[0-9a-fA-F]+|\d+)\)/) ||
-                  trimmed.match(/Battery Percentage:\s*(\d+)/);
-                if (match) battery = parseInt(match[1], 10);
-              }
+        const parts = firstLine.split(' ');
+        const mac = parts[1];
+        connectedName = parts.slice(2).join(' ') || 'Bluetooth Device';
+
+        try {
+          const { stdout: infoRes } = await execAsync(`bluetoothctl info ${mac}`);
+          for (const line of infoRes.split('\n')) {
+            const trimmed = line.trim();
+            if (trimmed.includes('Battery Percentage:')) {
+              const match =
+                trimmed.match(/\((0x[0-9a-fA-F]+|\d+)\)/) ||
+                trimmed.match(/Battery Percentage:\s*(\d+)/);
+              if (match) battery = parseInt(match[1], 10);
             }
-          } catch (e) {
-            // Ignore info detail error
+            if (trimmed.includes('Audio Sink') || trimmed.includes('Advanced Audio')) {
+              profile = 'A2DP Sink';
+            } else if (trimmed.includes('Human Interface Device') || trimmed.includes('HID')) {
+              profile = 'HID Input';
+            } else if (trimmed.includes('Headset') && !profile) {
+              profile = 'HFP/HSP';
+            }
           }
-          return {
-            enabled: true,
-            connected: true,
-            deviceName: name,
-            batteryPercent: battery,
-          };
+        } catch (e) {
+          // Ignore info detail error
         }
+
+        return {
+          enabled: true,
+          connected: true,
+          deviceName: connectedName,
+          batteryPercent: battery,
+          pairedCount,
+          connectedCount,
+          adapterName,
+          profile: profile || 'Connected',
+        };
       }
     } catch (e) {
       // No connected devices
     }
 
-    return { enabled: true, connected: false, deviceName: null, batteryPercent: null };
+    return {
+      enabled: true,
+      connected: false,
+      deviceName: null,
+      batteryPercent: null,
+      pairedCount,
+      connectedCount: 0,
+      adapterName,
+      profile: null,
+    };
   } catch (error) {
     console.error('[Bluetooth] Failed to query bluetooth info:', error);
-    return { enabled: false, connected: false, deviceName: null, batteryPercent: null };
+    return { enabled: false, connected: false, deviceName: null, batteryPercent: null, pairedCount: 0, connectedCount: 0 };
   }
 }
 
@@ -738,6 +842,74 @@ async function getAudioInfo(): Promise<AudioStatus> {
   }
 }
 
+async function getAudioStreamsList(): Promise<AudioStreamItem[]> {
+  try {
+    const [inputsRes, clientsRes] = await Promise.all([
+      execAsync('pactl -f json list sink-inputs').catch(() => ({ stdout: '[]' })),
+      execAsync('pactl -f json list clients').catch(() => ({ stdout: '[]' })),
+    ]);
+
+    const inputs = JSON.parse(inputsRes.stdout.trim() || '[]');
+    const clients = JSON.parse(clientsRes.stdout.trim() || '[]');
+
+    if (!Array.isArray(inputs)) return [];
+
+    const clientMap = new Map<string, any>();
+    if (Array.isArray(clients)) {
+      for (const c of clients) {
+        if (c.index !== undefined) {
+          clientMap.set(String(c.index), c.properties || {});
+        }
+      }
+    }
+
+    return inputs.map((item: any) => {
+      const cProps = clientMap.get(String(item.client)) || {};
+      const props = { ...cProps, ...(item.properties || {}) };
+
+      const binary = props['application.process.binary'] || '';
+      let name = props['application.name'] || props['node.name'] || 'Audio Stream';
+
+      if (binary.toLowerCase().includes('zen')) {
+        name = 'Zen Browser';
+      } else if (name.toLowerCase() === 'spotify' || binary.toLowerCase() === 'spotify') {
+        name = 'Spotify';
+      } else if (binary.toLowerCase().includes('telegram')) {
+        name = 'Telegram';
+      }
+
+      let vol = 100;
+      if (item.volume) {
+        const firstChan = Object.values(item.volume)[0] as any;
+        if (firstChan && firstChan.value_percent) {
+          vol = parseInt(String(firstChan.value_percent).replace('%', ''), 10) || 0;
+        }
+      }
+
+      const mediaName = props['media.name'];
+      const isGenericMedia =
+        !mediaName ||
+        mediaName === 'AudioStream' ||
+        mediaName === 'audio-src' ||
+        mediaName === 'Playback' ||
+        mediaName === name;
+
+      return {
+        id: item.index,
+        name,
+        binary,
+        mediaName: isGenericMedia ? undefined : mediaName,
+        volume: Math.min(100, Math.max(0, vol)),
+        isMuted: !!item.mute,
+        corked: !!item.corked,
+      };
+    });
+  } catch (error) {
+    console.error('[Audio] getAudioStreams error:', error);
+    return [];
+  }
+}
+
 async function handleSystemAction(action: 'poweroff' | 'reboot' | 'suspend' | 'lock'): Promise<void> {
   try {
     if (action === 'poweroff') {
@@ -900,6 +1072,10 @@ function registerIpc(): void {
     return await connectWifiNetwork(ssid, password);
   });
 
+  ipcMain.handle('drift:wifi-disconnect', async (_event, ssid?: string) => {
+    return await disconnectWifiNetwork(ssid);
+  });
+
   ipcMain.handle('drift:bt-status', async () => {
     return await getBtInfo();
   });
@@ -995,6 +1171,29 @@ function registerIpc(): void {
     }
   });
 
+  ipcMain.handle('drift:audio-streams', async () => {
+    return await getAudioStreamsList();
+  });
+
+  ipcMain.handle('drift:audio-stream-set-volume', async (_event, { id, volume }: { id: number; volume: number }) => {
+    try {
+      const clamped = Math.max(0, Math.min(100, Math.round(volume)));
+      await execAsync(`pactl set-sink-input-volume ${id} ${clamped}%`);
+    } catch (error) {
+      console.error('[Audio] Set stream volume error:', error);
+    }
+  });
+
+  ipcMain.handle('drift:audio-stream-toggle-mute', async (_event, id: number) => {
+    try {
+      await execAsync(`pactl set-sink-input-mute ${id} toggle`);
+      return true;
+    } catch (error) {
+      console.error('[Audio] Toggle stream mute error:', error);
+      return false;
+    }
+  });
+
   ipcMain.handle('drift:audio-open-settings', async () => {
     try {
       exec('pavucontrol');
@@ -1028,10 +1227,10 @@ function registerIpc(): void {
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
-    width: 980,
-    height: 680,
-    minWidth: 800,
-    minHeight: 520,
+    width: 1180,
+    height: 780,
+    minWidth: 960,
+    minHeight: 620,
     frame: false,
     titleBarStyle: 'hidden',
     transparent: true,

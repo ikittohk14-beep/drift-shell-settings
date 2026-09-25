@@ -21,16 +21,32 @@ export const Toggle: React.FC<ToggleProps> = ({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
-      className={`font-mono text-[11px] px-2.5 py-0.5 rounded border transition-colors cursor-pointer select-none inline-flex items-center space-x-1.5 ${
-        checked
-          ? 'bg-[#a3d4a0]/15 border-[#a3d4a0]/40 text-[#a3d4a0]'
-          : 'bg-[#131315] border-[#262529] text-[#929092] hover:text-[#e5e2e3]'
-      } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+      className={`group flex items-center space-x-2.5 font-mono text-xs cursor-pointer select-none transition-all ${
+        disabled ? 'opacity-40 cursor-not-allowed' : ''
+      }`}
     >
-      <span className={`text-[9px] ${checked ? 'text-[#a3d4a0]' : 'text-[#474648]'}`}>
-        {checked ? '●' : '○'}
+      <div
+        className={`w-11 h-6 rounded-full p-0.5 transition-all border flex items-center ${
+          checked
+            ? 'bg-[#a6d189] border-[#a6d189]'
+            : 'bg-[#18171b] border-[#36353b] group-hover:border-[#474648]'
+        }`}
+      >
+        <div
+          className={`w-4 h-4 rounded-full transition-transform duration-200 ease-out shadow-sm ${
+            checked
+              ? 'bg-[#131315] translate-x-5'
+              : 'bg-[#929092] translate-x-0.5'
+          }`}
+        />
+      </div>
+      <span
+        className={`text-xs font-semibold transition-colors ${
+          checked ? 'text-[#a6d189]' : 'text-[#929092]'
+        }`}
+      >
+        {checked ? t('enabled') : t('disabled')}
       </span>
-      <span>{checked ? t('enabled') : t('disabled')}</span>
     </button>
   );
 };

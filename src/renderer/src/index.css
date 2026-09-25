@@ -31,8 +31,8 @@ body {
 
 /* Minimal monospace scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -41,26 +41,26 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #262529;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #36353b;
 }
 
-/* Minimalist informational card (Matugen-Slate iOS-like floating card) */
+/* Minimalist informational card matching desktop widgets style */
 .minimal-card {
   background-color: #1a191d;
   border: 1px solid #262529;
-  border-radius: 20px;
-  transition: border-color 0.15s ease;
+  border-radius: 16px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .minimal-card:hover {
   border-color: #36353b;
 }
 
-/* Clean minimal range slider without gradients or shadows */
+/* Clean minimal monochrome range slider without gradients or shadows */
 input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
@@ -81,12 +81,13 @@ input[type='range']::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #859aea;
+  background: #e5e2e3;
   cursor: pointer;
   border: 2px solid #1a191d;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
 input[type='range']::-webkit-slider-thumb:hover {
-  background: #a4b5f5;
+  background: #ffffff;
+  transform: scale(1.1);
 }

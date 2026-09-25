@@ -1,4 +1,5 @@
 import React from 'react';
+import { Keyboard, Mouse, Maximize2 } from 'lucide-react';
 import Toggle from '../Toggle';
 import { useI18n } from '../../i18n';
 import type {
@@ -36,63 +37,63 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
   const { t, language } = useI18n();
 
   return (
-    <div className="space-y-3.5 max-w-xl text-[#e5e2e3] font-mono text-xs">
+    <div className="space-y-4 max-w-3xl text-[#e5e2e3] font-mono text-sm">
       {/* ── Page Header ────────────────────────────────────────────── */}
       <div className="flex items-center justify-between pb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#e5e2e3]">{t('tabInput')}</h1>
-          <p className="text-xs text-[#929092] mt-0.5">
+          <h1 className="text-3xl font-bold tracking-tight text-[#e5e2e3]">{t('tabInput')}</h1>
+          <p className="text-sm text-[#929092] mt-1">
             {t('inputKbdDesc')} • {t('inputMouseDesc')}
           </p>
         </div>
       </div>
 
       {/* ── Bento Grid: Row 1 (2 Square Tiles side-by-side) ───────────── */}
-      <div className="grid grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-2 gap-4">
         {/* Tile 1: Keyboard Layout */}
-        <div className="minimal-card p-4 flex flex-col justify-between h-36">
+        <div className="minimal-card p-5 flex flex-col justify-between h-40">
           <div className="flex items-center justify-between">
-            <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
-              1
+            <div className="w-8 h-8 rounded-xl bg-[#201f24] border border-[#262529] flex items-center justify-center text-[#e5e2e3]">
+              <Keyboard className="w-4 h-4" />
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">xkbcommon</span>
+            <span className="text-xs text-[#474648] font-mono">xkbcommon</span>
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">
+            <div className="text-xs text-[#929092] font-medium">
               {language === 'ru' ? 'Раскладки' : 'Active Layouts'}
             </div>
-            <div className="text-xl font-bold text-[#859aea] tracking-tight uppercase">
+            <div className="text-2xl font-bold text-[#e5e2e3] tracking-tight uppercase mt-1">
               {keyboard.layout || 'us, ru'}
             </div>
-            <div className="text-[10px] mt-0.5 text-[#a3d4a0] truncate">
+            <div className="text-xs mt-1 text-[#929092] truncate">
               ● {keyboard.options ? keyboard.options.split(',')[0] : 'grp:caps_toggle'}
             </div>
           </div>
         </div>
 
         {/* Tile 2: Mouse Speed Metric */}
-        <div className="minimal-card p-4 flex flex-col justify-between h-36">
+        <div className="minimal-card p-5 flex flex-col justify-between h-40">
           <div className="flex items-start justify-between">
             <div className="flex items-baseline">
-              <span className="text-3xl font-bold text-[#e5e2e3] tracking-tight">
+              <span className="text-4xl font-bold text-[#e5e2e3] tracking-tight">
                 {mouse.accel_speed ?? 0}
               </span>
-              <span className="text-xs text-[#929092] ml-1 font-medium">
+              <span className="text-sm text-[#929092] ml-1 font-medium">
                 {language === 'ru' ? 'скорость' : 'speed'}
               </span>
             </div>
-            <span className="text-[10px] text-[#474648] font-mono">libinput</span>
+            <span className="text-xs text-[#474648] font-mono">libinput</span>
           </div>
 
           <div>
-            <div className="text-[11px] text-[#929092] font-medium">
+            <div className="text-xs text-[#929092] font-medium">
               {language === 'ru' ? 'Профиль курсора' : 'Pointer Profile'}
             </div>
-            <div className="text-sm font-semibold text-[#859aea] truncate">
+            <div className="text-base font-semibold text-[#e5e2e3] truncate mt-0.5">
               {language === 'ru' ? 'Адаптивное ускорение' : 'Adaptive Acceleration'}
             </div>
-            <div className="text-[10px] text-[#474648] mt-0.5 font-mono">
+            <div className="text-xs text-[#474648] mt-1 font-mono">
               {trackpad.tap_to_click
                 ? (language === 'ru' ? '● касание вкл' : '● tap-to-click on')
                 : (language === 'ru' ? '○ касание выкл' : '○ tap-to-click off')}
@@ -102,14 +103,14 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
       </div>
 
       {/* ── Bento Grid: Row 2 (Wide Card - Keyboard Layouts) ─────────── */}
-      <div className="minimal-card p-4 space-y-3.5">
-        <div className="flex items-center space-x-2.5 border-b border-[#262529] pb-2.5">
-          <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
-            2
+      <div className="minimal-card p-5 space-y-4">
+        <div className="flex items-center space-x-3 border-b border-[#262529] pb-3">
+          <div className="w-8 h-8 rounded-xl bg-[#201f24] border border-[#262529] flex items-center justify-center text-[#e5e2e3]">
+            <Keyboard className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-xs font-semibold text-[#e5e2e3]">{t('inputKbdTitle')}</div>
-            <div className="text-[10px] text-[#929092]">{t('inputKbdDesc')}</div>
+            <div className="text-sm font-semibold text-[#e5e2e3]">{t('inputKbdTitle')}</div>
+            <div className="text-xs text-[#929092]">{t('inputKbdDesc')}</div>
           </div>
         </div>
 
@@ -121,7 +122,7 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
               value={keyboard.layout || 'us,ru'}
               onChange={(e) => onKeyboardChange({ ...keyboard, layout: e.target.value })}
               placeholder="us,ru"
-              className="w-full px-3 py-1.5 bg-[#131315] border border-[#262529] rounded-xl text-[#e5e2e3] font-mono focus:border-[#859aea] focus:outline-none transition-colors"
+              className="w-full px-3 py-1.5 bg-[#131315] border border-[#262529] rounded-xl text-[#e5e2e3] font-mono focus:border-[#e5e2e3] focus:outline-none transition-colors"
             />
           </div>
 
@@ -132,28 +133,28 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
               value={keyboard.options || 'grp:caps_toggle,grp_led:caps'}
               onChange={(e) => onKeyboardChange({ ...keyboard, options: e.target.value })}
               placeholder="grp:caps_toggle"
-              className="w-full px-3 py-1.5 bg-[#131315] border border-[#262529] rounded-xl text-[#e5e2e3] font-mono focus:border-[#859aea] focus:outline-none transition-colors"
+              className="w-full px-3 py-1.5 bg-[#131315] border border-[#262529] rounded-xl text-[#e5e2e3] font-mono focus:border-[#e5e2e3] focus:outline-none transition-colors"
             />
           </div>
         </div>
       </div>
 
       {/* ── Bento Grid: Row 3 (Wide Card - Mouse & Trackpad) ─────────── */}
-      <div className="minimal-card p-4 space-y-3.5">
-        <div className="flex items-center space-x-2.5 border-b border-[#262529] pb-2.5">
-          <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
-            3
+      <div className="minimal-card p-5 space-y-4">
+        <div className="flex items-center space-x-3 border-b border-[#262529] pb-3">
+          <div className="w-8 h-8 rounded-xl bg-[#201f24] border border-[#262529] flex items-center justify-center text-[#e5e2e3]">
+            <Mouse className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-xs font-semibold text-[#e5e2e3]">{t('inputMouseTitle')}</div>
-            <div className="text-[10px] text-[#929092]">{t('inputMouseDesc')}</div>
+            <div className="text-sm font-semibold text-[#e5e2e3]">{t('inputMouseTitle')}</div>
+            <div className="text-xs text-[#929092]">{t('inputMouseDesc')}</div>
           </div>
         </div>
 
-        <div className="space-y-3.5 pt-1">
+        <div className="space-y-4 pt-1">
           {/* Mouse Speed */}
           <div className="space-y-1.5">
-            <div className="flex justify-between text-[11px] text-[#929092]">
+            <div className="flex justify-between text-xs text-[#929092]">
               <span>{t('inputMouseSpeed')}</span>
               <span className="font-mono text-[#e5e2e3] font-bold">{mouse.accel_speed ?? 0}</span>
             </div>
@@ -166,13 +167,13 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
               onChange={(e) =>
                 onMouseChange({ ...mouse, accel_speed: parseFloat(e.target.value) })
               }
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer accent-[#e5e2e3]"
             />
           </div>
 
           {/* Trackpad Speed */}
           <div className="space-y-1.5">
-            <div className="flex justify-between text-[11px] text-[#929092]">
+            <div className="flex justify-between text-xs text-[#929092]">
               <span>{t('inputTrackpadSpeed')}</span>
               <span className="font-mono text-[#e5e2e3] font-bold">{trackpad.accel_speed ?? -0.2}</span>
             </div>
@@ -185,7 +186,7 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
               onChange={(e) =>
                 onTrackpadChange({ ...trackpad, accel_speed: parseFloat(e.target.value) })
               }
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer accent-[#e5e2e3]"
             />
           </div>
 
@@ -201,13 +202,13 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
       </div>
 
       {/* ── Bento Grid: Row 4 (Wide Card - Snap & Canvas) ───────────── */}
-      <div className="minimal-card p-4 space-y-3.5">
-        <div className="flex items-center space-x-2.5 border-b border-[#262529] pb-2.5">
-          <div className="w-7 h-7 rounded-full border border-[#36353b] flex items-center justify-center text-xs font-semibold text-[#e5e2e3]">
-            4
+      <div className="minimal-card p-5 space-y-4">
+        <div className="flex items-center space-x-3 border-b border-[#262529] pb-3">
+          <div className="w-8 h-8 rounded-xl bg-[#201f24] border border-[#262529] flex items-center justify-center text-[#e5e2e3]">
+            <Maximize2 className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-xs font-semibold text-[#e5e2e3]">{t('inputSnapTitle')}</div>
+            <div className="text-sm font-semibold text-[#e5e2e3]">{t('inputSnapTitle')}</div>
             <div className="text-[10px] text-[#929092]">{t('inputSnapDesc')}</div>
           </div>
         </div>
@@ -264,7 +265,7 @@ export const InputSystemView: React.FC<InputSystemViewProps> = ({
               onChange={(e) =>
                 onSnapChange({ ...snap, gap: parseInt(e.target.value, 10) })
               }
-              className="w-full cursor-pointer accent-[#859aea]"
+              className="w-full cursor-pointer accent-[#e5e2e3]"
             />
           </div>
 
